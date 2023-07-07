@@ -1,0 +1,41 @@
+  //edit button action
+
+  // const editPostItems = async (id) => {
+
+  //   const { itemsName, itemsUnits, damageItemsUnits, remarks, imageUrl } = itemsAdmin;
+
+  //   if (!itemsName || !itemsUnits || !damageItemsUnits || !remarks) {
+  //     console.log("Please fill all fields");
+  //     return;
+  //   }
+
+  //   try {
+  //     const cookieValue = Cookies.get('token');
+  //     const response = await fetch(`/update-items/${id}`, {
+  //       method: "PUT",
+  //       headers: {
+  //         Accept: 'application/json',
+  //         'Content-Type': 'application/json',
+  //         Authorization: 'Bearer ' + cookieValue,
+  //       },
+  //       credentials: 'include',
+  //       body: JSON.stringify({
+  //         itemsName,
+  //         itemsUnits,
+  //         damageItemsUnits,
+  //         remarks,
+  //         imageUrl,
+  //       }),
+  //     });
+
+  //     if (response.ok) {
+  //       console.log("Items Updated Successfully");
+  //     } else {
+  //       console.log("Invalid Items Update");
+  //     }
+
+  //   } catch (error) {
+  //     console.log("Error:");
+
+  //   }
+  // };

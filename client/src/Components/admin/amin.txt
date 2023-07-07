@@ -1,0 +1,1304 @@
+import { EuiForm, EuiFormRow, EuiTabbedContent, EuiFlexGroup, EuiFlexItem, EuiIcon, EuiFieldText, EuiLink, EuiSelect, EuiFilePicker, EuiTableHeader, EuiTableRow, EuiTableRowCell, EuiTableBody, EuiTable, EuiTableHeaderCell, EuiButton, EuiSpacer, EuiTitle, EuiText } from "@elastic/eui";
+import { json, useNavigate } from "react-router";
+import Cookies from 'js-cookie';
+import { useState, useEffect } from "react";
+
+import { ToastContainer, toast } from 'react-toastify';
+import '../../../node_modules/react-toastify/dist/ReactToastify.css';
+
+import ImageComponent from "../base64StringToImage";
+
+// import saveBase64AsImageFile from "../base64tofilename";
+
+// import base64StringToFile from "../base64tofilename";
+import convertBase64ToFile from "../base64StringToFile";
+
+
+
+
+
+
+
+
+
+const Admin = () => {
+
+  const notify = () => {
+    toast.success("Items Added Successfully", {
+      position: toast.POSITION.TOP_RIGHT,
+      autoClose: false
+    });
+  }
+
+  const navigate = useNavigate();
+  const [userRequests, setUserRequests] = useState([]);
+  const [googleRequests, setGoogleRequests] = useState([]);
+  const [items, setItems] = useState([]);
+
+  const callLogout = async () => {
+    try {
+      const res = await fetch('/logout', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        Cookies.remove('token');
+        navigate('/');
+      } else {
+        throw new Error('Logout failed');
+      }
+    } catch (err) {
+      console.log(err);
+      navigate('/');
+    }
+  };
+
+  const userRequestList = async () => {
+    try {
+      const cookieValue = Cookies.get('token');
+      const res = await fetch('/register-list', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        const data = await res.json();
+        console.log(data);
+        setUserRequests(data.pendingUsers);
+      } else {
+        throw new Error('Failed to fetch user requests');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const acceptUserRequest = async (id) => {
+    try {
+      const cookieValue = Cookies.get('token');
+      console.log(cookieValue, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+      console.log(id);
+      const res = await fetch(`/approve/${id}`, {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+
+        // Request approved successfully
+        // You can update the userRequests state or perform any other action as needed
+        // For example, remove the approved request from the list
+        const updatedRequests = userRequests.filter((request) => request._id !== id);
+        setUserRequests(updatedRequests);
+
+      } else {
+        throw new Error('Failed to approve user request');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+
+  //   const rejectUserRequest = async (id) => {
+  //     try {
+  //       const cookieValue = Cookies.get('token');
+  //       console.log(cookieValue,"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+  //       console.log(id);
+  //       const res = await fetch(`/reject/${id}`, {
+  //         method: 'PUT',
+  //         headers: {
+  //           Accept: 'application/json',
+  //           'Content-Type': 'application/json',
+  //           Authorization: 'Bearer ' + cookieValue,
+  //         },
+  //         credentials: 'include',
+  //       });
+
+  //       if (res.status === 200) {
+  //         window.location("User Request Rejected Successfully");
+  //         // Request approved successfully
+  //         // You can update the userRequests state or perform any other action as needed
+  //         // For example, remove the approved request from the list
+  //         const updatedRequests = userRequests.filter((request) => request._id !== id);
+  //         setUserRequests(updatedRequests);
+
+  //       } else {
+  //         throw new Error('Failed to approve user request');
+  //       }
+  //     } catch (error) {
+  //       console.log(error);
+  //     }
+  //   };
+
+  const rejectUserRequest = async (id) => {
+    try {
+      const cookieValue = Cookies.get('token');
+      console.log(cookieValue, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+      console.log(id);
+      const res = await fetch(`/reject/${id}`, {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        // Request rejected successfully
+        // You can update the userRequests state or perform any other action as needed
+        // For example, remove the rejected request from the list
+        const updatedRequests = userRequests.filter((request) => request._id !== id);
+        setUserRequests(updatedRequests);
+        window.alert("User Request Rejected Successfully");
+      } else {
+        throw new Error('Failed to reject user request');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  //oauth
+  const googleRequestList = async () => {
+    try {
+      const cookieValue = Cookies.get('token');
+      const res = await fetch('/oauth-register-list', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        const data = await res.json();
+        console.log(data);
+        setGoogleRequests(data.pendingUsers);
+      } else {
+        throw new Error('Failed to fetch user requests');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const googleacceptUserRequest = async (id) => {
+    try {
+      const cookieValue = Cookies.get('token');
+      console.log(cookieValue, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+      console.log(id);
+      const res = await fetch(`/google-approve/${id}`, {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+
+        // Request approved successfully
+        // You can update the userRequests state or perform any other action as needed
+        // For example, remove the approved request from the list
+        const updatedRequests = googleRequests.filter((request) => request._id !== id);
+        setGoogleRequests(updatedRequests);
+
+      } else {
+        throw new Error('Failed to approve user request');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+
+
+
+  const googlerejectUserRequest = async (id) => {
+    try {
+      const cookieValue = Cookies.get('token');
+      console.log(cookieValue, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+      console.log(id);
+      const res = await fetch(`/google-reject/${id}`, {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        // Request rejected successfully
+        // You can update the userRequests state or perform any other action as needed
+        // For example, remove the rejected request from the list
+        const updatedRequests = googleRequests.filter((request) => request._id !== id);
+        setGoogleRequests(updatedRequests);
+        window.alert("User Request Rejected Successfully");
+      } else {
+        throw new Error('Failed to reject user request');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  //admin CRUD
+  const [itemsAdmin, setItemsAdmin] = useState({
+    itemsName: "",
+    itemsUnits: "",
+    damageItemsUnits: "",
+    remarks: "",
+    selectedFileName :""
+    
+  });
+
+  const handleInputs = (e) => {
+    const { name, value } = e.target;
+    setItemsAdmin({ ...itemsAdmin, [name]: value });
+  };
+
+  //image field
+const [imageUrl, setImageUrl] = useState("");
+
+const [selectedFileName, setSelectedFileName] = useState(""); 
+
+//convert image into image string of base64 and fileName
+
+const handleImageChange = async (files) => {
+  if (files && files.length > 0) {
+    const imageFile = files[0];
+    const reader = new FileReader();
+
+    // Define a callback function to execute when the FileReader finishes reading the file
+    reader.onloadend = () => {
+      // Obtain the base64 string from the FileReader result
+      const base64String = reader.result.split(',')[1];
+      setImageUrl(base64String);
+    };
+
+    // Read the image file as a data URL
+    reader.readAsDataURL(imageFile);
+  }
+};
+
+
+
+
+  //reset field for items inputs
+
+  const resetFields = () => {
+    setItemsAdmin({
+      itemsName: "",
+      itemsUnits: "",
+      damageItemsUnits: "",
+      remarks: ""
+    });
+    setImageUrl("");
+    setSelectedFileName("");
+  };
+
+ 
+  const postItems = async () => {
+  
+    const { itemsName, itemsUnits, damageItemsUnits, remarks,fileName} = itemsAdmin;
+
+    if (!itemsName || !itemsUnits || !damageItemsUnits || !remarks) {
+      console.log("Please fill all fields");
+      return;
+    }
+
+    try {
+      const response = await fetch("/items-add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          itemsName,
+          itemsUnits,
+          damageItemsUnits,
+          remarks,
+          imageUrl, // Include the imageUrl in the request body
+          selectedFileName:fileName,
+          
+        }),
+      });
+      const data = await response.json();
+      console.log(data,"9999999999999999999999999999999");
+
+      if (response.ok) {
+
+        notify();
+        resetFields();
+        console.log("Items Added Successfully");
+
+      } else {
+        const errors = data.errors;
+        if (errors) {
+          console.log("Backend Errors:", Object.values(errors).join("\n"));
+          const errorMessage = Object.values(errors).join("\n");
+          toast.error(errorMessage, {
+            position: toast.POSITION.TOP_RIGHT,
+            autoClose: 20000
+          });
+        } else {
+
+          toast.error("Invalid Items Added", {
+            position: toast.POSITION.TOP_RIGHT,
+            autoClose: 20000
+          });
+          console.log("Invalid Items Added");
+        }
+      }
+
+    } catch (error) {
+      console.log("Error:", error);
+      toast.error(error, {
+        position: toast.POSITION.TOP_RIGHT,
+        autoClose: 20000,
+      });
+    }
+  };
+
+
+
+  //call item list from backend
+  const itemsList = async () => {
+    try {
+      const cookieValue = Cookies.get('token');
+      const res = await fetch('/items-list', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        const data = await res.json();
+        console.log(data);
+        setItems(data.itemsList);
+      } else {
+        throw new Error('Failed to fetch items');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+ 
+  // delete the items from item list
+  const [deleteItems, setDeleteItems] = useState([]);
+
+  const deleteItemsRequest = async (id) => {
+    try {
+      const cookieValue = Cookies.get('token');
+      const res = await fetch(`/delete-items/${id}`, {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        // Request rejected successfully
+        // You can update the userRequests state or perform any other action as needed
+        // For example, remove the rejected request from the list
+        const updatedRequests = deleteItems.filter((request) => request._id !== id);
+        setDeleteItems(updatedRequests);
+        itemsList()
+        window.alert("Items Deleted Successfully");
+      } else {
+        throw new Error('Failed to delete items');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  //when i clicked in edit button data show in input field
+
+  const [editingItem, setEditingItem] = useState(false);
+
+  const handleEditItem = async (item) => {
+   if (item.imageUrl) { 
+      setImageUrl(item.imageUrl);
+    } else {
+      setImageUrl('');
+    }
+    setEditingItem(true);
+
+    // const editTab = tabs.find((x) => x.id === 'example3');
+    refreshPage();
+
+    setItemsAdmin({
+      selectedId: item._id,
+      itemsName: item.itemsName,
+      itemsUnits: item.itemsUnits,
+      damageItemsUnits: item.damageItemsUnits,
+      imageUrl: item.imageUrl,
+      remarks: item.remarks,
+    });
+
+    console.log(itemsAdmin.imageUrl)
+    toast.success("This Items sends to Manage Items Tabs Successfully for Updates", {
+      position: toast.POSITION.TOP_RIGHT,
+      autoClose: true
+    });
+  };
+
+  const refreshPage = () => {
+    setselectedTab(tabs[2]);
+
+  }
+  useEffect(() => {
+    refreshPage();
+  }, [itemsAdmin])
+
+  //edit button action
+  const handleEditItems = async (id) => {
+    console.log(id, "99999999999999999999999999999999999999999999999999999999999999999999999999")
+    const { itemsName, itemsUnits, damageItemsUnits, remarks, imageUrl } = itemsAdmin;
+
+    // if (!itemsName || !itemsUnits || !damageItemsUnits || !remarks) {
+    //   console.log("Please fill all fields");
+    //   return;
+    // }
+
+    try {
+      const response = await fetch(`/update-items/${id}`, {
+        method: "PUT",
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          itemsName,
+          itemsUnits,
+          damageItemsUnits,
+          remarks,
+          imageUrl,
+        }),
+      });
+
+      if (response.ok) {
+        resetFields();
+        toast.success("Items Updated Successfully", {
+          position: toast.POSITION.TOP_RIGHT,
+          autoClose: true
+        });
+
+
+        console.log("Items Updated Successfully");
+      } else {
+        toast.error("Invalid Items Update", {
+          position: toast.POSITION.TOP_RIGHT,
+          autoClose: true
+        });
+        console.log("Invalid Items Update");
+      }
+
+    } catch (error) {
+      toast.error("Error", {
+        position: toast.POSITION.TOP_RIGHT,
+        autoClose: true
+      });
+      console.log("Error:");
+
+    }
+  }
+  const refreshPageAfterEdit = () => {
+    setselectedTab(tabs[3])
+
+  }
+
+  
+  useEffect(() => {
+    itemsList();
+  }, [itemsAdmin])
+
+  //when i clicked in edit button data show in input field
+
+
+
+  const tabs = [
+    {
+      id: 'example1',
+      name: <div onClick={() => { setselectedTab(tabs[0]) }}>Home</div>,
+      content: 'Welcome, Admin!.',
+    },
+    {
+      id: 'example2',
+      name: <div onClick={() => { setselectedTab(tabs[1]) }}>User Registration</div>,
+
+      content: (
+        <>
+          <EuiSpacer size='l' />
+
+          <EuiText textAlign="left">
+            <strong>
+              Normal Signup Request:
+            </strong>
+          </EuiText>
+
+          <EuiSpacer size='l' />
+          <EuiTable textAlign="center">
+            <EuiTableHeader>
+              <EuiTableHeaderCell>S.N</EuiTableHeaderCell>
+              <EuiTableHeaderCell>Email</EuiTableHeaderCell>
+              <EuiTableHeaderCell>Location</EuiTableHeaderCell>
+              <EuiTableHeaderCell>Action</EuiTableHeaderCell>
+            </EuiTableHeader>
+            <EuiTableBody>
+              {userRequests.map((item, index) => (
+                <EuiTableRow key={index}>
+                  <EuiTableRowCell>{index + 1}</EuiTableRowCell>
+                  <EuiTableRowCell>{item.email}</EuiTableRowCell>
+                  <EuiTableRowCell>{item.location}</EuiTableRowCell>
+                  <EuiTableRowCell>
+                    <EuiButton color="primary" fill size="s" onClick={() => acceptUserRequest(item._id)}>Approve</EuiButton>
+                    <EuiButton color="danger" fill size='s' onClick={() => rejectUserRequest(item._id)}>Reject</EuiButton>
+                  </EuiTableRowCell>
+
+                </EuiTableRow>
+              ))}
+            </EuiTableBody>
+          </EuiTable>
+          <EuiSpacer size='l' />
+
+
+          <EuiText textAlign="left">
+            <strong>
+              Google Sign Up Request:
+            </strong>
+          </EuiText>
+
+          <EuiSpacer size='l' />
+          <EuiTable >
+            <EuiTableHeader>
+              <EuiTableHeaderCell>S.N</EuiTableHeaderCell>
+              <EuiTableHeaderCell>Email</EuiTableHeaderCell>
+              <EuiTableHeaderCell>User Name</EuiTableHeaderCell>
+              <EuiTableHeaderCell>Action</EuiTableHeaderCell>
+            </EuiTableHeader>
+            <EuiTableBody>
+              {googleRequests.map((item, index) => (
+                <EuiTableRow key={index}>
+                  <EuiTableRowCell>{index + 1}</EuiTableRowCell>
+                  <EuiTableRowCell>{item.email}</EuiTableRowCell>
+                  <EuiTableRowCell>{item.username}</EuiTableRowCell>
+                  <EuiTableRowCell>
+                    <EuiButton color="primary" fill size="s" onClick={() => googleacceptUserRequest(item._id)}>Approve</EuiButton>
+                    <EuiButton color="danger" fill size='s' onClick={() => googlerejectUserRequest(item._id)}>Reject</EuiButton>
+                  </EuiTableRowCell>
+
+                </EuiTableRow>
+              ))}
+            </EuiTableBody>
+          </EuiTable>
+
+        </>
+
+
+
+      ),
+    },
+    {
+      id: 'example3',
+      name: <div onClick={() => { setselectedTab(tabs[2]); }}>Manage Items</div>,
+      content: (
+
+        <EuiForm component="form" >
+          <EuiSpacer />
+          <EuiFlexGroup>
+            <EuiFlexItem>
+              <EuiFormRow label="Item Description" >
+                <EuiFieldText name="itemsName" onChange={handleInputs} value={itemsAdmin.itemsName} />
+              </EuiFormRow>
+            </EuiFlexItem>
+
+            <EuiFlexItem>
+              <EuiFormRow label="Item Unit" >
+                <EuiFieldText name="itemsUnits" onChange={handleInputs} value={itemsAdmin.itemsUnits} />
+              </EuiFormRow>
+            </EuiFlexItem>
+          </EuiFlexGroup>
+          <EuiSpacer />
+          <EuiFlexGroup>
+            <EuiFlexItem>
+              <EuiFormRow label="Damage Item Unit" >
+                <EuiFieldText name="damageItemsUnits" onChange={handleInputs} value={itemsAdmin.damageItemsUnits} />
+              </EuiFormRow>
+            </EuiFlexItem>
+
+            <EuiFlexItem>
+              <EuiFormRow label="Item Image">
+                {
+                  editingItem ?
+                     <EuiFilePicker onChange={handleImageChange} initialPromptText="Select the Image File" />
+
+                    :
+
+                    <EuiFilePicker onChange={handleImageChange} initialPromptText="Select the Image File" />
+
+                }
+              </EuiFormRow>
+            </EuiFlexItem>
+          </EuiFlexGroup>
+
+          <EuiFormRow label="Remarks" >
+            <EuiFieldText name="remarks" onChange={handleInputs} value={itemsAdmin.remarks} />
+          </EuiFormRow>
+
+          <EuiSpacer />
+          <EuiSpacer />
+
+          {/* <EuiButton type="submit" fill onClick={postItems}>
+            {editingItem ? 'Edit Item' : 'Save Item'}
+   
+          </EuiButton> */}
+
+          {editingItem ? (
+            <EuiButton type="button" fill onClick={() => { handleEditItems(itemsAdmin.selectedId) }}>
+              Edit
+            </EuiButton>
+          ) : (
+            <EuiButton type="button" fill onClick={postItems} >
+              Save Item
+            </EuiButton>
+          )}
+
+        </EuiForm>
+      )
+    },
+    {
+      id: 'example4',
+      name: <div onClick={() => {
+        setselectedTab(tabs[3])
+        itemsList()
+      }}>Items List</div>,
+      content: (
+        <EuiTable >
+          <EuiTableHeader>
+            <EuiTableHeaderCell>S.N</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Item/Description</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Item Unit</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Damange Item Unit</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Item Image</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Remarks</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Action</EuiTableHeaderCell>
+          </EuiTableHeader>
+          <EuiTableBody>
+            {items.map((item, index) => (
+              <EuiTableRow key={index}>
+                <EuiTableRowCell>{index + 1}</EuiTableRowCell>
+                <EuiTableRowCell>{item.itemsName}</EuiTableRowCell>
+                <EuiTableRowCell>{item.itemsUnits}</EuiTableRowCell>
+                <EuiTableRowCell>{item.damageItemsUnits}</EuiTableRowCell>
+                <EuiTableRowCell><ImageComponent base64String={item.imageUrl}  contentType={item.imageContentType}  className="conversion-image" /></EuiTableRowCell>
+                <EuiTableRowCell>{item.remarks}</EuiTableRowCell>
+                <EuiTableRowCell>
+                  <EuiFlexGroup>
+                    <EuiFlexItem >
+                      <EuiButton color="primary" fill size="s" onClick={() => {
+                        handleEditItem(item)
+                      }}><EuiIcon type="documentEdit" size="m" /></EuiButton>
+                    </EuiFlexItem>
+                    <EuiFlexItem >
+                      <EuiButton color="danger" fill size="s" onClick={() => deleteItemsRequest(item._id)} ><EuiIcon type="trash" size="m" /></EuiButton>
+                    </EuiFlexItem>
+                  </EuiFlexGroup>
+
+                </EuiTableRowCell>
+
+              </EuiTableRow>
+            ))}
+          </EuiTableBody>
+
+        </EuiTable>
+
+      ),
+    },
+    {
+      id: 'example5',
+      name: <div onClick={() => { setselectedTab(tabs[4]) }}>Logout</div>,
+      content: (
+        <button onClick={callLogout}>Logout</button>
+      ),
+    },
+  ];
+
+
+
+  const [selectedTab, setselectedTab] = useState(tabs[0]);
+
+
+
+
+  useEffect(() => {
+    userRequestList();
+    googleRequestList();
+
+
+
+  }, []);
+
+  return (
+    <div className="admin-pannl">
+      <EuiTabbedContent
+        selectedTab={selectedTab}
+
+        tabs={tabs}
+      />
+
+
+      <ToastContainer />
+    </div>
+  );
+};
+
+export default Admin;
+
+
+///////////////////////////////
+import { EuiForm, EuiFormRow, EuiTabbedContent, EuiFlexGroup, EuiFlexItem, EuiIcon, EuiFieldText, EuiLink, EuiSelect, EuiFilePicker, EuiTableHeader, EuiTableRow, EuiTableRowCell, EuiTableBody, EuiTable, EuiTableHeaderCell, EuiButton, EuiSpacer, EuiTitle, EuiText } from "@elastic/eui";
+import { json, useNavigate } from "react-router";
+import Cookies from 'js-cookie';
+import { useState, useEffect } from "react";
+
+import { ToastContainer, toast } from 'react-toastify';
+import '../../../node_modules/react-toastify/dist/ReactToastify.css';
+
+import ImageComponent from "../base64StringToImage";
+import RequestApprove from "../subAdmin/requestApprove";
+
+// import saveBase64AsImageFile from "../base64tofilename";
+
+// import base64StringToFile from "../base64tofilename";
+import convertBase64ToFile from "../base64StringToFile";
+
+
+
+
+
+
+
+
+
+const Admin = () => {
+
+  const notify = () => {
+    toast.success("Items Added Successfully", {
+      position: toast.POSITION.TOP_RIGHT,
+      autoClose: false
+    });
+  }
+
+  const navigate = useNavigate();
+ 
+  const [items, setItems] = useState([]);
+
+  const callLogout = async () => {
+    try {
+      const res = await fetch('/logout', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        Cookies.remove('token');
+        navigate('/');
+      } else {
+        throw new Error('Logout failed');
+      }
+    } catch (err) {
+      console.log(err);
+      navigate('/');
+    }
+  };
+
+ 
+
+  //admin CRUD
+  const [itemsAdmin, setItemsAdmin] = useState({
+    itemsName: "",
+    itemsUnits: "",
+    damageItemsUnits: "",
+    remarks: "",
+    selectedFileName :""
+    
+  });
+
+  const handleInputs = (e) => {
+    const { name, value } = e.target;
+    setItemsAdmin({ ...itemsAdmin, [name]: value });
+  };
+
+  //image field
+const [imageUrl, setImageUrl] = useState("");
+
+const [selectedFileName, setSelectedFileName] = useState(""); 
+
+//convert image into image string of base64 and fileName
+
+const handleImageChange = async (files) => {
+  if (files && files.length > 0) {
+    const imageFile = files[0];
+    const reader = new FileReader();
+
+    // Define a callback function to execute when the FileReader finishes reading the file
+    reader.onloadend = () => {
+      // Obtain the base64 string from the FileReader result
+      const base64String = reader.result.split(',')[1];
+      setImageUrl(base64String);
+    };
+
+    // Read the image file as a data URL
+    reader.readAsDataURL(imageFile);
+  }
+};
+
+
+
+
+  //reset field for items inputs
+
+  const resetFields = () => {
+    setItemsAdmin({
+      itemsName: "",
+      itemsUnits: "",
+      damageItemsUnits: "",
+      remarks: ""
+    });
+    setImageUrl("");
+    setSelectedFileName("");
+  };
+
+ 
+  const postItems = async () => {
+  
+    const { itemsName, itemsUnits, damageItemsUnits, remarks,fileName} = itemsAdmin;
+
+    if (!itemsName || !itemsUnits || !damageItemsUnits || !remarks) {
+      console.log("Please fill all fields");
+      return;
+    }
+
+    try {
+      const response = await fetch("/items-add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          itemsName,
+          itemsUnits,
+          damageItemsUnits,
+          remarks,
+          imageUrl, // Include the imageUrl in the request body
+          selectedFileName:fileName,
+          
+        }),
+      });
+      const data = await response.json();
+      console.log(data,"9999999999999999999999999999999");
+
+      if (response.ok) {
+
+        notify();
+        resetFields();
+        console.log("Items Added Successfully");
+
+      } else {
+        const errors = data.errors;
+        if (errors) {
+          console.log("Backend Errors:", Object.values(errors).join("\n"));
+          const errorMessage = Object.values(errors).join("\n");
+          toast.error(errorMessage, {
+            position: toast.POSITION.TOP_RIGHT,
+            autoClose: 20000
+          });
+        } else {
+
+          toast.error("Invalid Items Added", {
+            position: toast.POSITION.TOP_RIGHT,
+            autoClose: 20000
+          });
+          console.log("Invalid Items Added");
+        }
+      }
+
+    } catch (error) {
+      console.log("Error:", error);
+      toast.error(error, {
+        position: toast.POSITION.TOP_RIGHT,
+        autoClose: 20000,
+      });
+    }
+  };
+
+
+
+  //call item list from backend
+  const itemsList = async () => {
+    try {
+      const cookieValue = Cookies.get('token');
+      const res = await fetch('/items-list', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        const data = await res.json();
+        console.log(data);
+        setItems(data.itemsList);
+      } else {
+        throw new Error('Failed to fetch items');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+ 
+  // delete the items from item list
+  const [deleteItems, setDeleteItems] = useState([]);
+
+  const deleteItemsRequest = async (id) => {
+    try {
+      const cookieValue = Cookies.get('token');
+      const res = await fetch(`/delete-items/${id}`, {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        // Request rejected successfully
+        // You can update the userRequests state or perform any other action as needed
+        // For example, remove the rejected request from the list
+        const updatedRequests = deleteItems.filter((request) => request._id !== id);
+        setDeleteItems(updatedRequests);
+        itemsList()
+        window.alert("Items Deleted Successfully");
+      } else {
+        throw new Error('Failed to delete items');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  //when i clicked in edit button data show in input field
+
+  const [editingItem, setEditingItem] = useState(false);
+
+  const handleEditItem = async (item) => {
+   if (item.imageUrl) { 
+      setImageUrl(item.imageUrl);
+    } else {
+      setImageUrl('');
+    }
+    setEditingItem(true);
+
+    // const editTab = tabs.find((x) => x.id === 'example3');
+    refreshPage();
+
+    setItemsAdmin({
+      selectedId: item._id,
+      itemsName: item.itemsName,
+      itemsUnits: item.itemsUnits,
+      damageItemsUnits: item.damageItemsUnits,
+      imageUrl: item.imageUrl,
+      remarks: item.remarks,
+    });
+
+    console.log(itemsAdmin.imageUrl)
+    toast.success("This Items sends to Manage Items Tabs Successfully for Updates", {
+      position: toast.POSITION.TOP_RIGHT,
+      autoClose: true
+    });
+  };
+
+  const refreshPage = () => {
+    setselectedTab(tabs[2]);
+
+  }
+  useEffect(() => {
+    refreshPage();
+  }, [itemsAdmin])
+
+  //edit button action
+  const handleEditItems = async (id) => {
+    console.log(id, "99999999999999999999999999999999999999999999999999999999999999999999999999")
+    const { itemsName, itemsUnits, damageItemsUnits, remarks, imageUrl } = itemsAdmin;
+
+    // if (!itemsName || !itemsUnits || !damageItemsUnits || !remarks) {
+    //   console.log("Please fill all fields");
+    //   return;
+    // }
+
+    try {
+      const response = await fetch(`/update-items/${id}`, {
+        method: "PUT",
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          itemsName,
+          itemsUnits,
+          damageItemsUnits,
+          remarks,
+          imageUrl,
+        }),
+      });
+
+      if (response.ok) {
+        resetFields();
+        toast.success("Items Updated Successfully", {
+          position: toast.POSITION.TOP_RIGHT,
+          autoClose: true
+        });
+
+
+        console.log("Items Updated Successfully");
+      } else {
+        toast.error("Invalid Items Update", {
+          position: toast.POSITION.TOP_RIGHT,
+          autoClose: true
+        });
+        console.log("Invalid Items Update");
+      }
+
+    } catch (error) {
+      toast.error("Error", {
+        position: toast.POSITION.TOP_RIGHT,
+        autoClose: true
+      });
+      console.log("Error:");
+
+    }
+  }
+  const refreshPageAfterEdit = () => {
+    setselectedTab(tabs[3])
+
+  }
+
+  
+  useEffect(() => {
+    itemsList();
+  }, [itemsAdmin])
+
+  //when i clicked in edit button data show in input field
+
+
+
+  const tabs = [
+    {
+      id: 'example1',
+      name: <div onClick={() => { setselectedTab(tabs[0]) }}>Home</div>,
+      content: 'Welcome, Admin!.',
+    },
+    {
+      id: 'example2',
+      name: <div onClick={() => { setselectedTab(tabs[1]) }}>User Registration</div>,
+
+      content: (
+     
+        <RequestApprove/>
+
+
+      ),
+    },
+    {
+      id: 'example3',
+      name: <div onClick={() => { setselectedTab(tabs[2]); }}>Manage Items</div>,
+      content: (
+
+        <EuiForm component="form" >
+          <EuiSpacer />
+          <EuiFlexGroup>
+            <EuiFlexItem>
+              <EuiFormRow label="Item Description" >
+                <EuiFieldText name="itemsName" onChange={handleInputs} value={itemsAdmin.itemsName} />
+              </EuiFormRow>
+            </EuiFlexItem>
+
+            <EuiFlexItem>
+              <EuiFormRow label="Item Unit" >
+                <EuiFieldText name="itemsUnits" onChange={handleInputs} value={itemsAdmin.itemsUnits} />
+              </EuiFormRow>
+            </EuiFlexItem>
+          </EuiFlexGroup>
+          <EuiSpacer />
+          <EuiFlexGroup>
+            <EuiFlexItem>
+              <EuiFormRow label="Damage Item Unit" >
+                <EuiFieldText name="damageItemsUnits" onChange={handleInputs} value={itemsAdmin.damageItemsUnits} />
+              </EuiFormRow>
+            </EuiFlexItem>
+
+            <EuiFlexItem>
+              <EuiFormRow label="Item Image">
+                {
+                  editingItem ?
+                     <EuiFilePicker onChange={handleImageChange} initialPromptText="Select the Image File" />
+
+                    :
+
+                    <EuiFilePicker onChange={handleImageChange} initialPromptText="Select the Image File" />
+
+                }
+              </EuiFormRow>
+            </EuiFlexItem>
+          </EuiFlexGroup>
+
+          <EuiFormRow label="Remarks" >
+            <EuiFieldText name="remarks" onChange={handleInputs} value={itemsAdmin.remarks} />
+          </EuiFormRow>
+
+          <EuiSpacer />
+          <EuiSpacer />
+
+          {/* <EuiButton type="submit" fill onClick={postItems}>
+            {editingItem ? 'Edit Item' : 'Save Item'}
+   
+          </EuiButton> */}
+
+          {editingItem ? (
+            <EuiButton type="button" fill onClick={() => { handleEditItems(itemsAdmin.selectedId) }}>
+              Edit
+            </EuiButton>
+          ) : (
+            <EuiButton type="button" fill onClick={postItems} >
+              Save Item
+            </EuiButton>
+          )}
+
+        </EuiForm>
+      )
+    },
+    {
+      id: 'example4',
+      name: <div onClick={() => {
+        setselectedTab(tabs[3])
+        itemsList()
+      }}>Items List</div>,
+      content: (
+        <EuiTable >
+          <EuiTableHeader>
+            <EuiTableHeaderCell>S.N</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Item/Description</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Item Unit</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Damange Item Unit</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Item Image</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Remarks</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Action</EuiTableHeaderCell>
+          </EuiTableHeader>
+          <EuiTableBody>
+            {items.map((item, index) => (
+              <EuiTableRow key={index}>
+                <EuiTableRowCell>{index + 1}</EuiTableRowCell>
+                <EuiTableRowCell>{item.itemsName}</EuiTableRowCell>
+                <EuiTableRowCell>{item.itemsUnits}</EuiTableRowCell>
+                <EuiTableRowCell>{item.damageItemsUnits}</EuiTableRowCell>
+                <EuiTableRowCell><ImageComponent base64String={item.imageUrl}  contentType={item.imageContentType}  className="conversion-image" /></EuiTableRowCell>
+                <EuiTableRowCell>{item.remarks}</EuiTableRowCell>
+                <EuiTableRowCell>
+                  <EuiFlexGroup>
+                    <EuiFlexItem >
+                      <EuiButton color="primary" fill size="s" onClick={() => {
+                        handleEditItem(item)
+                      }}><EuiIcon type="documentEdit" size="m" /></EuiButton>
+                    </EuiFlexItem>
+                    <EuiFlexItem >
+                      <EuiButton color="danger" fill size="s" onClick={() => deleteItemsRequest(item._id)} ><EuiIcon type="trash" size="m" /></EuiButton>
+                    </EuiFlexItem>
+                  </EuiFlexGroup>
+
+                </EuiTableRowCell>
+
+              </EuiTableRow>
+            ))}
+          </EuiTableBody>
+
+        </EuiTable>
+
+      ),
+    },
+    {
+      id: 'example5',
+      name: <div onClick={() => { setselectedTab(tabs[4]) }}>Logout</div>,
+      content: (
+        <button onClick={callLogout}>Logout</button>
+      ),
+    },
+  ];
+
+
+
+  const [selectedTab, setselectedTab] = useState(tabs[0]);
+
+
+
+
+ 
+
+  return (
+    <div className="admin-pannl">
+      <EuiTabbedContent
+        selectedTab={selectedTab}
+
+        tabs={tabs}
+      />
+
+
+      <ToastContainer />
+    </div>
+  );
+};
+
+export default Admin;

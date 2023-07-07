@@ -1,0 +1,90 @@
+
+import { EuiFlexGroup, EuiFlexItem, EuiTitle,EuiTextArea,EuiFieldText, EuiSpacer, EuiButton, EuiText,EuiImage  } from "@elastic/eui";
+const image = require('./Abstraction.png');
+ 
+
+
+
+const Signup =()=>{
+    return(
+     
+        <EuiFlexGroup className="login">
+            <EuiFlexItem className="login-left">
+                <EuiTitle className="login-left-first"><h1>Login for exclusive content and features. </h1></EuiTitle>
+                <EuiTitle className="login-left-second"><h2>Don't miss out!</h2></EuiTitle>
+                <EuiImage src={image} className="login-left-image"/>
+     
+
+            </EuiFlexItem>
+            <EuiFlexItem className="login-content signup-content">
+                <EuiFlexGroup justifyContent="center" direction="column" className="login-content-list">
+                    <EuiFlexItem grow={false} >
+                       <EuiTitle><h1>Signup</h1></EuiTitle>  
+                    </EuiFlexItem>
+                   <EuiSpacer size="l"/>
+                
+                    <EuiFlexItem grow={false}> 
+                       <EuiFieldText placeholder="Email"  className="login-content-field"/>
+                    </EuiFlexItem>
+                    <EuiSpacer size="l"/>
+                
+                    <EuiFlexItem grow={false}>
+                       <EuiFieldText placeholder="Password" className="login-content-field"/>
+                    </EuiFlexItem>
+                    <EuiSpacer size="l"/>
+                  
+                    <EuiFlexItem grow={false}>
+                       <EuiFieldText placeholder="Confirm Password" className="login-content-field"/>
+                    </EuiFlexItem>
+                    <EuiSpacer size="l"/>
+                   
+                    <EuiFlexItem grow={false}>
+                       <EuiFieldText placeholder="Phone" className="login-content-field"/>
+                    </EuiFlexItem>
+                    <EuiSpacer size="l"/>
+                   
+                    <EuiFlexItem grow={false}>
+                       <EuiButton color="primary"  fill>Login</EuiButton>
+                    </EuiFlexItem>
+                    <EuiSpacer size="l"/>
+                  
+                    <EuiFlexItem  grow={false}>
+                        <EuiText className="login-content-signuplink"><p>If you haven’t signed up, please </p><a href="./"> Sign Up.</a></EuiText>
+                    </EuiFlexItem>
+                </EuiFlexGroup>
+            </EuiFlexItem>
+    
+        </EuiFlexGroup>
+    )
+}
+export default Signup;
+
+
+const itemsSetsInItemsList =(item) =>{
+    setItemsAdmin({
+      ...itemsAdmin,
+      selectedItem: item,
+      itemsName: item.itemsName,
+      itemsUnits: item.itemsUnits,
+      damageItemsUnits: item.damageItemsUnits,
+      remarks: item.remarks,
+    });
+ 
+
+ // Set the image URL
+    if (item.imageUrl) { // Update this line
+      setImageUrl(item.imageUrl); // Update this line
+  
+    } else {
+      setImageUrl('');
+    }
+
+    const editTab = tabs.find((x) => x.id === 'example3');
+      setselectedTab(prev => prev = editTab);
+  }
+
+  const handleEditItem = async (item) => {
+      itemsSetsInItemsList(item);
+  
+
+  };

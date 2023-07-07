@@ -1,0 +1,536 @@
+import { EuiForm, EuiFormRow, EuiTabbedContent, EuiFlexGroup, EuiFlexItem, EuiIcon, EuiFieldText, EuiLink, EuiSelect, EuiFilePicker, EuiTableHeader, EuiTableRow, EuiTableRowCell, EuiTableBody, EuiTable, EuiTableHeaderCell, EuiButton, EuiSpacer, EuiTitle, EuiText } from "@elastic/eui";
+import { json, useNavigate } from "react-router";
+import Cookies from 'js-cookie';
+import { useState, useEffect } from "react";
+import { ToastContainer, toast } from 'react-toastify';
+import '../../../node_modules/react-toastify/dist/ReactToastify.css';
+import ImageComponent from "../base64StringToImage";
+import RequestApprove from "../subAdmin/requestApprove";
+
+import React from 'react';
+import { json, useNavigate } from "react-router";
+import Cookies from 'js-cookie';
+import { useState, useEffect } from "react";
+import { ToastContainer, toast } from 'react-toastify';
+import '../../../node_modules/react-toastify/dist/ReactToastify.css';
+import ManageItems from '../subAdmin/manageItems';
+import ItemsList from '../subAdmin/itemsList';
+
+const Admin = () => {
+  const notify = () => {
+    toast.success("Items Added Successfully", {
+      position: toast.POSITION.TOP_RIGHT,
+      autoClose: true
+    });
+  }
+
+  const navigate = useNavigate();
+
+  const [items, setItems] = useState([]);
+
+  const callLogout = async () => {
+    try {
+      const res = await fetch('/logout', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        Cookies.remove('token');
+        navigate('/');
+      } else {
+        throw new Error('Logout failed');
+      }
+    } catch (err) {
+      console.log(err);
+      navigate('/');
+    }
+  };
+
+  //admin CRUD
+
+  const [itemsAdmin, setItemsAdmin] = useState({
+    itemsName: "",
+    itemsUnits: "",
+    damageItemsUnits: "",
+    remarks: "",
+    selectedFileName: ""
+
+  });
+
+  const handleInputs = (e) => {
+    const { name, value } = e.target;
+    setItemsAdmin({ ...itemsAdmin, [name]: value });
+  };
+
+  //image field
+  const [imageUrl, setImageUrl] = useState("");
+
+  const [selectedFileName, setSelectedFileName] = useState("");
+
+  //convert image into image string of base64 and fileName
+
+  const handleImageChange = async (files) => {
+    if (files && files.length > 0) {
+      const imageFile = files[0];
+      const reader = new FileReader();
+
+      // Define a callback function to execute when the FileReader finishes reading the file
+      reader.onloadend = () => {
+        // Obtain the base64 string from the FileReader result
+        const base64String = reader.result.split(',')[1];
+        setImageUrl(base64String);
+      };
+
+      // Read the image file as a data URL
+      reader.readAsDataURL(imageFile);
+    }
+  };
+
+
+
+
+  //reset field for items inputs
+
+  const resetFields = () => {
+    setItemsAdmin({
+      itemsName: "",
+      itemsUnits: "",
+      damageItemsUnits: "",
+      remarks: ""
+    });
+    setImageUrl("");
+    setSelectedFileName("");
+  };
+
+
+  const postItems = async () => {
+
+    const { itemsName, itemsUnits, damageItemsUnits, remarks, fileName } = itemsAdmin;
+
+    if (!itemsName || !itemsUnits || !damageItemsUnits || !remarks) {
+      console.log("Please fill all fields");
+      return;
+    }
+
+    try {
+      const response = await fetch("/items-add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          itemsName,
+          itemsUnits,
+          damageItemsUnits,
+          remarks,
+          imageUrl, // Include the imageUrl in the request body
+          selectedFileName: fileName,
+
+        }),
+      });
+      const data = await response.json();
+      console.log(data, "9999999999999999999999999999999");
+
+      if (response.ok) {
+
+        notify();
+        resetFields();
+        console.log("Items Added Successfully");
+
+      } else {
+        const errors = data.errors;
+        if (errors) {
+          console.log("Backend Errors:", Object.values(errors).join("\n"));
+          const errorMessage = Object.values(errors).join("\n");
+          toast.error(errorMessage, {
+            position: toast.POSITION.TOP_RIGHT,
+            autoClose: 20000
+          });
+        } else {
+
+          toast.error("Invalid Items Added", {
+            position: toast.POSITION.TOP_RIGHT,
+            autoClose: 20000
+          });
+          console.log("Invalid Items Added");
+        }
+      }
+
+    } catch (error) {
+      console.log("Error:", error);
+      toast.error(error, {
+        position: toast.POSITION.TOP_RIGHT,
+        autoClose: 20000,
+      });
+    }
+  };
+
+  //call item list from backend
+
+  const itemsList = async () => {
+    try {
+      const cookieValue = Cookies.get('token');
+      const res = await fetch('/items-list', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        const data = await res.json();
+        console.log(data);
+        setItems(data.itemsList);
+      } else {
+        throw new Error('Failed to fetch items');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+
+  // delete the items from item list
+
+  const [deleteItems, setDeleteItems] = useState([]);
+  const deleteItemsRequest = async (id) => {
+    try {
+      const cookieValue = Cookies.get('token');
+      const res = await fetch(`/delete-items/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+  
+      if (res.status === 200) {
+        // Fetch the updated list of items after successful deletion
+        const updatedItemsRes = await fetch('/items-list', {
+          headers: {
+            Accept: 'application/json',
+            Authorization: 'Bearer ' + cookieValue,
+          },
+          credentials: 'include',
+        });
+  
+        if (updatedItemsRes.status === 200) {
+          const updatedItems = await updatedItemsRes.json();
+          console.log(updatedItems,"99999999999999999999999" )
+          setDeleteItems(updatedItems.itemsList);
+  
+          toast.success('Items deleted successfully', {
+            position: toast.POSITION.TOP_RIGHT,
+            autoClose: 20000,
+          });
+        } else {
+          throw new Error('Failed to fetch updated items');
+        }
+      } else {
+        throw new Error('Failed to delete items');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+ 
+ 
+//when i clicked in edit button data show in input field
+const [editingItem, setEditingItem] = useState(false);
+const handleEditItem = async (item) => {
+  try {
+    const response = await fetch(`/get-item/${item._id}`);
+    if (response.ok) {
+      const data = await response.json();
+      const updatedItem = data.item;
+      if (updatedItem.imageUrl) {
+        setImageUrl(updatedItem.imageUrl);
+      } else {
+        setImageUrl('');
+      }
+      setEditingItem(true);
+      toast.success("This item was fetched successfully", {
+        position: toast.POSITION.TOP_RIGHT,
+        autoClose: true
+      });
+    
+      setItemsAdmin({
+        id: updatedItem._id,
+        itemsName: updatedItem.itemsName,
+        itemsUnits: updatedItem.itemsUnits,
+        damageItemsUnits: updatedItem.damageItemsUnits,
+        imageUrl: updatedItem.imageUrl,
+        remarks: updatedItem.remarks,
+      });
+     
+    } else {
+      throw new Error(response.statusText);
+    }
+  } catch (error) {
+    console.log(error);
+    toast.error("Failed to fetch the item", {
+      position: toast.POSITION.TOP_RIGHT,
+      autoClose: true
+    });
+  }
+};
+
+  const refreshPage = () => {
+    setselectedTab(tabs[2]);
+  }
+  useEffect(()=>{
+    refreshPage();
+
+  },[itemsAdmin])
+
+
+  //edit button action
+
+  const handleEditItems = async (id) => {
+    const { itemsName, itemsUnits, damageItemsUnits, remarks, imageUrl } = itemsAdmin;
+    if (!itemsName || !itemsUnits || !damageItemsUnits || !remarks) {
+      console.log("Please fill all fields");
+      return;
+    }
+    try {
+      const response = await fetch(`/update-items/${id}`, {
+        method: "PUT",
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          itemsName,
+          itemsUnits,
+          damageItemsUnits,
+          remarks,
+          imageUrl,
+        }),
+      });
+
+      if (response.ok) {
+        resetFields();
+        toast.success("Items Updated Successfully", {
+          position: toast.POSITION.TOP_RIGHT,
+          autoClose: true
+        });
+        console.log("Items Updated Successfully");
+      } else {
+        toast.error("Invalid Items Update", {
+          position: toast.POSITION.TOP_RIGHT,
+          autoClose: true
+        });
+        console.log("Invalid Items Update");
+      }
+
+    } catch (error) {
+      toast.error("Error", {
+        position: toast.POSITION.TOP_RIGHT,
+        autoClose: true
+      });
+      console.log("Error:");
+
+    }
+  }
+  const refreshPageAfterEdit = () => {
+    setselectedTab(tabs[3])
+
+  }
+ 
+// Updated handleImageChangeEdit function
+
+   const handleImageChangeEdit = (files) => {
+    if (files && files.length > 0) {
+      const imageFile = files[0];
+      const reader = new FileReader();
+  
+      // Define a callback function to execute when the FileReader finishes reading the file
+      reader.onloadend = () => {
+        // Obtain the base64 string from the FileReader result
+        const base64String = reader.result.split(',')[1];
+       
+        setItemsAdmin(prevState => ({
+          ...prevState,
+          imageUrl: base64String
+        }));
+      };
+  
+      // Read the image file as a data URL
+      reader.readAsDataURL(imageFile);
+    }
+  };
+
+
+  useEffect(() => {
+    itemsList();
+  }, [itemsAdmin])
+
+  const tabs = [
+    {
+      id: 'example1',
+      name: <div onClick={() => { setselectedTab(tabs[0]) }}>Home</div>,
+      content: 'Welcome, Admin!.',
+    },
+    {
+      id: 'example2',
+      name: <div onClick={() => { setselectedTab(tabs[1]) }}>User Registration</div>,
+      content: (
+        <RequestApprove />
+      ),
+    },
+    {
+      id: 'example3',
+      name: <div onClick={() => { setselectedTab(tabs[2]); }}>Manage Items</div>,
+      content: (
+
+        <EuiForm component="form" >
+          <EuiSpacer />
+          <EuiFlexGroup>
+            <EuiFlexItem>
+              <EuiFormRow label="Item Description" >
+                <EuiFieldText name="itemsName" onChange={handleInputs} value={itemsAdmin.itemsName} />
+              </EuiFormRow>
+            </EuiFlexItem>
+
+            <EuiFlexItem>
+              <EuiFormRow label="Item Unit" >
+                <EuiFieldText name="itemsUnits" onChange={handleInputs} value={itemsAdmin.itemsUnits} />
+              </EuiFormRow>
+            </EuiFlexItem>
+          </EuiFlexGroup>
+          <EuiSpacer />
+          <EuiFlexGroup>
+            <EuiFlexItem>
+              <EuiFormRow label="Damage Item Unit" >
+                <EuiFieldText name="damageItemsUnits" onChange={handleInputs} value={itemsAdmin.damageItemsUnits} />
+              </EuiFormRow>
+            </EuiFlexItem>
+
+            <EuiFlexItem>
+              <EuiFormRow label="Item Image">
+                {
+                  editingItem ?
+                  <>
+                   <EuiFilePicker onChange={handleImageChangeEdit} initialPromptText="Select the Image File" />
+                    <div className="uiImage">
+                      <ImageComponent base64String={itemsAdmin.imageUrl}  />
+                    </div>
+                
+                  </>
+
+                    :
+
+                    <EuiFilePicker onChange={handleImageChange} initialPromptText="Select the Image File" />
+
+                }
+              </EuiFormRow>
+            </EuiFlexItem>
+          </EuiFlexGroup>
+
+          <EuiFormRow label="Remarks" >
+            <EuiFieldText name="remarks" onChange={handleInputs} value={itemsAdmin.remarks} />
+          </EuiFormRow>
+
+          <EuiSpacer />
+          <EuiSpacer />
+
+          {/* <EuiButton type="submit" fill onClick={postItems}>
+            {editingItem ? 'Edit Item' : 'Save Item'}
+   
+          </EuiButton> */}
+
+          {editingItem ? (
+            <EuiButton type="button" fill onClick={() => { handleEditItems(itemsAdmin.id) }}>
+              Edit
+            </EuiButton>
+          ) : (
+            <EuiButton type="button" fill onClick={postItems} >
+              Save Item
+            </EuiButton>
+          )}
+
+        </EuiForm>
+      )
+    },
+    {
+      id: 'example4',
+      name: <div onClick={() => {
+        setselectedTab(tabs[3])
+        itemsList()
+      }}>Items List</div>,
+      content: (
+        <EuiTable >
+          <EuiTableHeader>
+            <EuiTableHeaderCell>S.N</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Item/Description</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Item Unit</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Damange Item Unit</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Item Image</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Remarks</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Action</EuiTableHeaderCell>
+          </EuiTableHeader>
+          <EuiTableBody>
+            {items.map((item, index) => (
+              <EuiTableRow key={index}>
+                <EuiTableRowCell>{index + 1}</EuiTableRowCell>
+                <EuiTableRowCell>{item.itemsName}</EuiTableRowCell>
+                <EuiTableRowCell>{item.itemsUnits}</EuiTableRowCell>
+                <EuiTableRowCell>{item.damageItemsUnits}</EuiTableRowCell>
+                <EuiTableRowCell><ImageComponent base64String={item.imageUrl} contentType={item.imageContentType} className="conversion-image" /></EuiTableRowCell>
+                <EuiTableRowCell>{item.remarks}</EuiTableRowCell>
+                <EuiTableRowCell>
+                  <EuiFlexGroup>
+                    <EuiFlexItem >
+                      <EuiButton color="primary" fill size="s" onClick={() => {
+                        handleEditItem(item)
+                      }}><EuiIcon type="documentEdit" size="m" /></EuiButton>
+                    </EuiFlexItem>
+                    <EuiFlexItem >
+                      <EuiButton color="danger" fill size="s" onClick={() => deleteItemsRequest(item._id)} ><EuiIcon type="trash" size="m" /></EuiButton>
+                    </EuiFlexItem>
+                  </EuiFlexGroup>
+
+                </EuiTableRowCell>
+
+              </EuiTableRow>
+            ))}
+          </EuiTableBody>
+
+        </EuiTable>
+
+      ),
+    },
+    {
+      id: 'example5',
+      name: <div onClick={() => { setselectedTab(tabs[4]) }}>Logout</div>,
+      content: (
+        <button onClick={callLogout}>Logout</button>
+      ),
+    },
+  ];
+
+  const [selectedTab, setselectedTab] = useState(tabs[0]);
+
+  return (
+    <div className="admin-pannl">
+      <EuiTabbedContent
+        selectedTab={selectedTab}
+        tabs={tabs}
+      />
+      <ToastContainer />
+    </div>
+  );
+};
+
+export default Admin;

@@ -1,0 +1,479 @@
+auth.js
+
+const express = require('express');
+require('dotenv').config();
+const router = express.Router();
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+require('../db');
+const Register = require('../models/registers');
+const Authenticate = require("../middleware/authenticate");
+
+router.get('/', (req, res) => {
+  res.send("This is home page");
+});
+
+// Login
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: "Please fill in all the fields" });
+    }
+
+    const userLogin = await Register.findOne({ email: email });
+    console.log({userLogin})
+
+    if (userLogin) {
+      const isMatch = bcrypt.compareSync(password, userLogin.confirmPassword);
+
+      if (!isMatch) {
+        console.log({isMatch})
+        return res.status(400).json({ error: "Invalid credentials" });
+      }
+
+      const token = await userLogin.generateAuthToken();
+
+      res.json({ token: token, message: "User logged in successfully" });
+    } else {
+      res.status(400).json({ error: "Invalid credentials" });
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Register
+router.post('/register', async (req, res) => {
+  const { email, password, confirmPassword, location } = req.body;
+  if (!email || !password || !confirmPassword || !location) {
+    return res.status(422).json({ error: "Please fill all the fields" });
+  }
+
+  try {
+    const userExists = await Register.findOne({ email: email });
+    if (userExists) {
+      return res.status(422).json({ error: "User already exists" });
+    }
+
+    const saltRounds = 10;
+    const passwordHash =  bcrypt.hashSync(password, saltRounds);
+
+    const user = new Register({
+      email: email,
+      password: passwordHash,
+      confirmPassword: passwordHash,
+      location: location
+    });
+
+    await user.save();
+
+    res.status(201).json({ message: "User registered successfully" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Failed to register user" });
+  }
+});
+
+// Logout
+router.get('/logout', Authenticate, async (req, res) => {
+  try {
+    req.rootUser.tokens = [];
+    await req.rootUser.save();
+
+    res.json({ message: 'Logged out successfully' });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: 'Failed to logout' });
+  }
+});
+
+// Home
+// router.get("/home", Authenticate, (req, res) => {
+//   res.send(req.rootUser);
+// });
+router.get("/home", Authenticate, (req, res) => {
+    if (req.rootUser.role === 'superuser') {
+      // Handle superuser specific actions
+      res.send("Welcome, superuser!");
+    } else {
+      // Handle normal user actions
+      res.send("Welcome, user!");
+    }
+  });
+  
+
+// Create default superuser
+router.post('/createsuperuser', async (req, res) => {
+  try {
+    const { email, password, confirmPassword, location } = req.body;
+
+    if (!email || !password || !confirmPassword || !location) {
+      return res.status(422).json({ error: "Please fill all the fields" });
+    }
+
+    const userExists = await Register.findOne({ email: email });
+    if (userExists) {
+      return res.status(422).json({ error: "User already exists" });
+    }
+
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash(password, saltRounds);
+
+    const superuser = new Register({
+      email: email,
+      password: passwordHash,
+      confirmPassword: passwordHash,
+      location: location,
+      role: 'superuser' 
+    });
+
+    await superuser.save();
+
+    res.status(201).json({ message: "Default superuser created successfully" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Failed to create default superuser" });
+  }
+});
+
+module.exports = router;
+
+
+
+
+
+const jwt = require('jsonwebtoken');
+require('dotenv').config();
+
+const mongoose = require("mongoose");
+
+const bcrypt = require('bcryptjs');
+
+const employeeSchema =  new mongoose.Schema({
+    email:{
+        type:String,
+        required:true,
+        unique:true
+    },
+    password:{
+        type:String,
+        required:true
+    }
+    ,   
+    confirmPassword:{
+        type:String,
+        required:true
+    },
+    location:{
+        type:String,
+        required:true
+    },
+    role: {
+        type: String,
+        default: 'user' // Default role is set to 'user'
+    },
+    isVerified: {
+        type: Boolean,
+        default: false
+      },
+    isApproved: {
+      type: Boolean,
+      default: false
+    } , 
+ 
+  
+    tokens:[
+        {
+            token:{
+                type:String,
+                required:true
+            }
+        }
+    ]
+})
+//now we need to create collections
+
+
+
+//we are hashing the password
+// employeeSchema.pre('save',async function(next){
+//     if(this.isModified('password')){
+//         this.password = await bcrypt.hash(this.password,12);
+//         this.confirmPassword =await bcrypt.hash(this.confirmPassword,12);
+//     }
+//     next();
+// });
+
+//we are generating token
+employeeSchema.methods.generateAuthToken = async function(){
+    try{
+        let tokenEmcee = jwt.sign({_id:this._id},process.env.SECRET_KEY);
+        this.tokens = this.tokens.concat({token:tokenEmcee});
+        await this.save();
+        return tokenEmcee;  
+    }catch(err){
+        console.log(err);
+    }
+}
+//we are genrating token
+employeeSchema.methods.generateAuthToken = async function() {
+    try {
+      let tokenEmcee = jwt.sign(
+        { _id: this._id, role: this.role }, // Include the role in the token payload
+        process.env.SECRET_KEY
+      );
+      this.tokens = this.tokens.concat({ token: tokenEmcee });
+      await this.save();
+      return tokenEmcee;
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
+const Register  = new mongoose.model("Inventory",employeeSchema);
+//collections should in singular 
+
+module.exports = Register;
+
+
+
+const jwt = require("jsonwebtoken");
+require('dotenv').config();
+const Register = require("../models/registers");
+
+const Authenticate = async (req, res, next) => {
+  try {
+    console.log(req.headers)
+    const token = req.cookies.token;
+    const tokenVerify = jwt.verify(token, process.env.SECRET_KEY);
+    console.log(tokenVerify ,"6666666666666666666666666666");
+
+    const rootUser = await Register.findOne({
+      _id: tokenVerify._id,
+     
+      "tokens.token": token
+    });
+
+    if (!rootUser) {
+      throw new Error(`User not Found`);
+    }
+
+    req.token = token;
+    req.rootUser = rootUser;
+
+    req.userID = rootUser._id;
+
+    req.role = rootUser.role;
+  
+    next();
+  } catch (err) {
+    res.status(401).send("Unauthorized: No Authorization");
+    console.log(err);
+  }
+};
+
+
+
+module.exports = Authenticate;
+
+
+
+
+import { EuiTabbedContent } from "@elastic/eui";
+import { useNavigate } from "react-router";
+import Cookies from 'js-cookie';
+import { useEffect, useState } from "react";
+
+const Admin = () => {
+  const navigate = useNavigate();
+  const [userRequests, setUserRequests] = useState([]);
+
+  const callLogout = async () => {
+    try {
+      const res = await fetch('/logout', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        Cookies.remove('token');
+        navigate('/');
+      } else {
+        throw new Error('Logout failed');
+      }
+    } catch (err) {
+      console.log(err);
+      navigate('/');
+    }
+  };
+
+  const userRequestList = async () => {
+    try {
+      const cookieValue = Cookies.get('token');
+      const res = await fetch('/register-list', {
+        method: "GET",
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      const data = await res.json();
+      setUserRequests(data); // Set the received data in the state variable
+      console.log(data, "Data from API");
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    userRequestList();
+  }, []);
+
+  return (
+    <div className="admin-pannl">
+      <EuiTabbedContent
+        tabs={[
+          {
+            id: 'example1',
+            name: 'Home',
+            content: 'Welcome, Admin!.',
+          },
+          {
+            id: 'example2',
+            name: 'User Registration',
+            content:
+              (
+                <table border="1%">
+                  <thead>
+                    <tr>
+                      <th>S.N.</th>
+                      <th>Email</th>
+                      <th>Location</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {userRequests.map((request, index) => (
+                      <tr key={index}>
+                        <td>{index + 1}</td>
+                        <td>{request.email}</td>
+                        <td>{request.location}</td>
+                        <td>
+                          <button>Approve</button>
+                          <button>Reject</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ),
+          },
+          {
+            id: 'example3',
+            name: 'Todo',
+            content: 'todo Task',
+          },
+          {
+            id: 'example4',
+            name: 'Logout',
+            content: (
+              <button onClick={callLogout}>Logout</button>
+            ),
+          },
+        ]}
+      />
+    </div>
+  );
+}
+
+export default Admin;
+
+
+
+ <table>
+                    <thead>
+                       <th>S.N</th>
+                       <th>Email</th>
+                       <th>Location</th>
+                       <th>Action</th>
+                    </thead>
+                    <tbody>
+                    {userRequests.map((data, index) => (
+                         <tr key={index}>
+                           <td>{index + 1}</td>
+                           <td>{data.email}</td>
+                           <td>{data.location}</td>
+                           <td>
+                             <button>Approve</button>
+                             <button>Reject</button>
+                           </td>
+                         </tr>
+                       ))}
+
+                    </tbody>
+                   
+                </table>
+
+
+const express = require('express');
+const cookieParser = require("cookie-parser");
+
+
+const app = express();
+const PORT = 5000;
+
+//Oauth 2.o
+const cors = require('cors');
+const passport = require('passport');
+const cookieSession = require('cookie-session');
+
+const connection = require("./db");
+const Register = require("./models/registers");
+
+const port = process.env.PORT || 8080;
+
+
+// Middleware
+app.use(express.json());
+app.use(cookieParser());
+
+app.use(
+    cookieSession({
+        name:'session',
+        keys:['cyberwolve'],
+        maxAge:24*60*60*100,
+    })
+);
+app.use(
+	cors({
+		origin: "http://localhost:3000",
+		methods: "GET,POST,PUT,DELETE",
+		credentials: true,
+	})
+);
+
+app.use("/auth", authRoute);
+app.use(passport.initialize());
+app.use(passport.session());
+//db connection
+connection();
+app.use(express.json());
+app.use(require('./router/auth'));
+
+
+
+
+
+
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+});

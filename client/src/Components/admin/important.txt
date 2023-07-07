@@ -1,0 +1,2008 @@
+import { EuiForm, EuiFormRow, EuiTabbedContent, EuiFlexGroup, EuiFlexItem, EuiIcon, EuiFieldText, EuiLink, EuiSelect, EuiFilePicker, EuiTableHeader, EuiTableRow, EuiTableRowCell, EuiTableBody, EuiTable, EuiTableHeaderCell, EuiButton, EuiSpacer, EuiTitle, EuiText } from "@elastic/eui";
+import { useNavigate } from "react-router";
+import Cookies from 'js-cookie';
+import { useState, useEffect } from "react";
+
+import { ToastContainer, toast } from 'react-toastify';
+import '../../../node_modules/react-toastify/dist/ReactToastify.css';
+
+import ImageComponent from "../base64StringToImage";
+
+
+
+
+
+
+
+
+
+const Admin = () => {
+
+  const notify = () => {
+    toast.success("Items Added Successfully", {
+      position: toast.POSITION.TOP_RIGHT,
+      autoClose: false
+    });
+  }
+
+  const navigate = useNavigate();
+  const [userRequests, setUserRequests] = useState([]);
+  const [googleRequests, setGoogleRequests] = useState([]);
+  const [items, setItems] = useState([]);
+
+  const callLogout = async () => {
+    try {
+      const res = await fetch('/logout', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        Cookies.remove('token');
+        navigate('/');
+      } else {
+        throw new Error('Logout failed');
+      }
+    } catch (err) {
+      console.log(err);
+      navigate('/');
+    }
+  };
+
+  const userRequestList = async () => {
+    try {
+      const cookieValue = Cookies.get('token');
+      const res = await fetch('/register-list', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        const data = await res.json();
+        console.log(data);
+        setUserRequests(data.pendingUsers);
+      } else {
+        throw new Error('Failed to fetch user requests');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const acceptUserRequest = async (id) => {
+    try {
+      const cookieValue = Cookies.get('token');
+      console.log(cookieValue, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+      console.log(id);
+      const res = await fetch(`/approve/${id}`, {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+
+        // Request approved successfully
+        // You can update the userRequests state or perform any other action as needed
+        // For example, remove the approved request from the list
+        const updatedRequests = userRequests.filter((request) => request._id !== id);
+        setUserRequests(updatedRequests);
+
+      } else {
+        throw new Error('Failed to approve user request');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+
+  //   const rejectUserRequest = async (id) => {
+  //     try {
+  //       const cookieValue = Cookies.get('token');
+  //       console.log(cookieValue,"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+  //       console.log(id);
+  //       const res = await fetch(`/reject/${id}`, {
+  //         method: 'PUT',
+  //         headers: {
+  //           Accept: 'application/json',
+  //           'Content-Type': 'application/json',
+  //           Authorization: 'Bearer ' + cookieValue,
+  //         },
+  //         credentials: 'include',
+  //       });
+
+  //       if (res.status === 200) {
+  //         window.location("User Request Rejected Successfully");
+  //         // Request approved successfully
+  //         // You can update the userRequests state or perform any other action as needed
+  //         // For example, remove the approved request from the list
+  //         const updatedRequests = userRequests.filter((request) => request._id !== id);
+  //         setUserRequests(updatedRequests);
+
+  //       } else {
+  //         throw new Error('Failed to approve user request');
+  //       }
+  //     } catch (error) {
+  //       console.log(error);
+  //     }
+  //   };
+
+  const rejectUserRequest = async (id) => {
+    try {
+      const cookieValue = Cookies.get('token');
+      console.log(cookieValue, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+      console.log(id);
+      const res = await fetch(`/reject/${id}`, {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        // Request rejected successfully
+        // You can update the userRequests state or perform any other action as needed
+        // For example, remove the rejected request from the list
+        const updatedRequests = userRequests.filter((request) => request._id !== id);
+        setUserRequests(updatedRequests);
+        window.alert("User Request Rejected Successfully");
+      } else {
+        throw new Error('Failed to reject user request');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  //oauth
+  const googleRequestList = async () => {
+    try {
+      const cookieValue = Cookies.get('token');
+      const res = await fetch('/oauth-register-list', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        const data = await res.json();
+        console.log(data);
+        setGoogleRequests(data.pendingUsers);
+      } else {
+        throw new Error('Failed to fetch user requests');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const googleacceptUserRequest = async (id) => {
+    try {
+      const cookieValue = Cookies.get('token');
+      console.log(cookieValue, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+      console.log(id);
+      const res = await fetch(`/google-approve/${id}`, {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+
+        // Request approved successfully
+        // You can update the userRequests state or perform any other action as needed
+        // For example, remove the approved request from the list
+        const updatedRequests = googleRequests.filter((request) => request._id !== id);
+        setGoogleRequests(updatedRequests);
+
+      } else {
+        throw new Error('Failed to approve user request');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+
+
+
+  const googlerejectUserRequest = async (id) => {
+    try {
+      const cookieValue = Cookies.get('token');
+      console.log(cookieValue, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+      console.log(id);
+      const res = await fetch(`/google-reject/${id}`, {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        // Request rejected successfully
+        // You can update the userRequests state or perform any other action as needed
+        // For example, remove the rejected request from the list
+        const updatedRequests = googleRequests.filter((request) => request._id !== id);
+        setGoogleRequests(updatedRequests);
+        window.alert("User Request Rejected Successfully");
+      } else {
+        throw new Error('Failed to reject user request');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  //admin CRUD
+  const [itemsAdmin, setItemsAdmin] = useState({
+    itemsName: '', // Add default value here
+    itemsUnits: '', // Add default value here
+    damageItemsUnits: '', // Add default value here
+    remarks: '', // Add default value here
+  });
+
+  const handleInputs = (e) => {
+    const { name, value } = e.target;
+    setItemsAdmin({ ...itemsAdmin, [name]: value });
+  };
+
+  //image field
+  const [imageUrl, setImageUrl] = useState("");
+
+  //convert image into image string of base64
+  const handleImageChange = async (files) => {
+    if (files && files.length > 0) {
+      const imageFile = files[0];
+
+      // Create a FileReader object
+      const reader = new FileReader();
+
+      // Define a callback function to execute when the FileReader finishes reading the file
+      reader.onloadend = () => {
+        // Obtain the base64 string from the FileReader result
+        const base64String = reader.result.split(',')[1];
+        setImageUrl(base64String);
+      };
+
+      // Read the image file as a data URL
+      reader.readAsDataURL(imageFile);
+    }
+  };
+
+
+  //reset field for items inputs
+
+  const resetFields = () => {
+    setItemsAdmin({
+      itemsName: "",
+      itemsUnits: "",
+      damageItemsUnits: "",
+      remarks: ""
+    });
+    setImageUrl("");
+  };
+
+  const postItems = async (e) => {
+    e.preventDefault();
+    const { itemsName, itemsUnits, damageItemsUnits, remarks } = itemsAdmin;
+
+    if (!itemsName || !itemsUnits || !damageItemsUnits || !remarks) {
+      console.log("Please fill all fields");
+      return;
+    }
+
+    try {
+      const response = await fetch("/items-add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          itemsName,
+          itemsUnits,
+          damageItemsUnits,
+          remarks,
+          imageUrl, // Include the imageUrl in the request body
+        }),
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+
+        notify();
+        resetFields();
+        console.log("Items Added Successfully");
+
+      } else {
+        const errors = data.errors;
+        if (errors) {
+          console.log("Backend Errors:", Object.values(errors).join("\n"));
+          const errorMessage = Object.values(errors).join("\n");
+          toast.error(errorMessage, {
+            position: toast.POSITION.TOP_RIGHT,
+            autoClose: 20000
+          });
+        } else {
+
+          toast.error("Invalid Items Added", {
+            position: toast.POSITION.TOP_RIGHT,
+            autoClose: 20000
+          });
+          console.log("Invalid Items Added");
+        }
+      }
+
+    } catch (error) {
+      console.log("Error:", error);
+      toast.error(error, {
+        position: toast.POSITION.TOP_RIGHT,
+        autoClose: 20000,
+      });
+    }
+  };
+  //call item list from backend
+  const itemsList = async () => {
+    try {
+      const cookieValue = Cookies.get('token');
+      const res = await fetch('/items-list', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        const data = await res.json();
+        console.log(data);
+        setItems(data.itemsList);
+      } else {
+        throw new Error('Failed to fetch items');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  // delete the items from item list
+  const [deleteItems, setDeleteItems] = useState([]);
+
+  const deleteItemsRequest = async (id) => {
+    try {
+      const cookieValue = Cookies.get('token');
+      const res = await fetch(`/delete-items/${id}`, {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        // Request rejected successfully
+        // You can update the userRequests state or perform any other action as needed
+        // For example, remove the rejected request from the list
+        const updatedRequests = deleteItems.filter((request) => request._id !== id);
+        setDeleteItems(updatedRequests);
+        itemsList()
+        window.alert("Items Deleted Successfully");
+      } else {
+        throw new Error('Failed to delete items');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+ 
+  //when i clicked in edit button data show in input field
+  const tabs = [
+    {
+      id: 'example1',
+      name:  <div onClick={() => { setselectedTab(tabs[0])}}>Home</div>,
+      content: 'Welcome, Admin!.',
+    },
+    {
+      id: 'example2',
+      name: <div onClick={() => { setselectedTab(tabs[1])}}>User Registration</div>,
+      content: (
+        <>
+          <EuiSpacer size='l' />
+
+          <EuiText textAlign="left">
+            <strong>
+              Normal Signup Request:
+            </strong>
+          </EuiText>
+
+          <EuiSpacer size='l' />
+          <EuiTable >
+            <EuiTableHeader>
+              <EuiTableHeaderCell>S.N</EuiTableHeaderCell>
+              <EuiTableHeaderCell>Email</EuiTableHeaderCell>
+              <EuiTableHeaderCell>Location</EuiTableHeaderCell>
+              <EuiTableHeaderCell>Action</EuiTableHeaderCell>
+            </EuiTableHeader>
+            <EuiTableBody>
+              {userRequests.map((item, index) => (
+                <EuiTableRow key={index}>
+                  <EuiTableRowCell>{index + 1}</EuiTableRowCell>
+                  <EuiTableRowCell>{item.email}</EuiTableRowCell>
+                  <EuiTableRowCell>{item.location}</EuiTableRowCell>
+                  <EuiTableRowCell>
+                    <EuiButton color="primary" fill size="s" onClick={() => acceptUserRequest(item._id)}>Approve</EuiButton>
+                    <EuiButton color="danger" fill size='s' onClick={() => rejectUserRequest(item._id)}>Reject</EuiButton>
+                  </EuiTableRowCell>
+
+                </EuiTableRow>
+              ))}
+            </EuiTableBody>
+          </EuiTable>
+          <EuiSpacer size='l' />
+
+
+          <EuiText textAlign="left">
+            <strong>
+              Google Sign Up Request:
+            </strong>
+          </EuiText>
+
+          <EuiSpacer size='l' />
+          <EuiTable >
+            <EuiTableHeader>
+              <EuiTableHeaderCell>S.N</EuiTableHeaderCell>
+              <EuiTableHeaderCell>Email</EuiTableHeaderCell>
+              <EuiTableHeaderCell>User Name</EuiTableHeaderCell>
+              <EuiTableHeaderCell>Action</EuiTableHeaderCell>
+            </EuiTableHeader>
+            <EuiTableBody>
+              {googleRequests.map((item, index) => (
+                <EuiTableRow key={index}>
+                  <EuiTableRowCell>{index + 1}</EuiTableRowCell>
+                  <EuiTableRowCell>{item.email}</EuiTableRowCell>
+                  <EuiTableRowCell>{item.username}</EuiTableRowCell>
+                  <EuiTableRowCell>
+                    <EuiButton color="primary" fill size="s" onClick={() => googleacceptUserRequest(item._id)}>Approve</EuiButton>
+                    <EuiButton color="danger" fill size='s' onClick={() => googlerejectUserRequest(item._id)}>Reject</EuiButton>
+                  </EuiTableRowCell>
+
+                </EuiTableRow>
+              ))}
+            </EuiTableBody>
+          </EuiTable>
+
+        </>
+
+
+
+      ),
+    },
+    {
+      id: 'example3',
+      name: <div onClick={() => { setselectedTab(tabs[2]);  }}>Manage Items</div>,
+      content: (
+
+        <EuiForm component="form" >
+          <EuiSpacer />
+          <EuiFlexGroup>
+            <EuiFlexItem>
+              <EuiFormRow label="Item Description" >
+                <EuiFieldText name="itemsName" onChange={handleInputs} value={itemsAdmin.itemsName} />
+              </EuiFormRow>
+            </EuiFlexItem>
+
+            <EuiFlexItem>
+              <EuiFormRow label="Item Unit" >
+                <EuiFieldText name="itemsUnits" onChange={handleInputs} value={itemsAdmin.itemsUnits} />
+              </EuiFormRow>
+            </EuiFlexItem>
+          </EuiFlexGroup>
+          <EuiSpacer />
+          <EuiFlexGroup>
+            <EuiFlexItem>
+              <EuiFormRow label="Damage Item Unit" >
+                <EuiFieldText name="damageItemsUnits" onChange={handleInputs} value={itemsAdmin.damageItemsUnits} />
+              </EuiFormRow>
+            </EuiFlexItem>
+
+            <EuiFlexItem>
+              <EuiFormRow label="Item Image">
+                <EuiFilePicker onChange={handleImageChange} />
+              </EuiFormRow>
+            </EuiFlexItem>
+          </EuiFlexGroup>
+
+          <EuiFormRow label="Remarks" >
+            <EuiFieldText name="remarks" onChange={handleInputs} value={itemsAdmin.remarks} />
+          </EuiFormRow>
+
+          <EuiSpacer />
+          <EuiSpacer />
+
+          <EuiButton type="submit" fill onClick={postItems}>
+            Save Item
+          </EuiButton>
+
+        </EuiForm>
+      )
+    },
+    {
+      id: 'example4',
+      name: <div onClick={() => { 
+        setselectedTab(tabs[3])
+        itemsList() 
+      }}>Items List</div>,
+      content: (
+        <EuiTable >
+          <EuiTableHeader>
+            <EuiTableHeaderCell>S.N</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Item/Description</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Item Unit</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Damange Item Unit</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Item Image</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Remarks</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Action</EuiTableHeaderCell>
+          </EuiTableHeader>
+          <EuiTableBody>
+            {items.map((item, index) => (
+              <EuiTableRow key={index}>
+                <EuiTableRowCell>{index + 1}</EuiTableRowCell>
+                <EuiTableRowCell>{item.itemsName}</EuiTableRowCell>
+                <EuiTableRowCell>{item.itemsUnits}</EuiTableRowCell>
+                <EuiTableRowCell>{item.damageItemsUnits}</EuiTableRowCell>
+                <EuiTableRowCell><ImageComponent base64String={item.imageUrl} className="conversion-image" /></EuiTableRowCell>
+                <EuiTableRowCell>{item.remarks}</EuiTableRowCell>
+                <EuiTableRowCell>
+                  <EuiFlexGroup>
+                    <EuiFlexItem >
+                      <EuiButton color="primary" fill size="s" onClick={() => {
+                        handleEditItem(item)
+                      }}><EuiIcon type="documentEdit" size="m" /></EuiButton>
+                    </EuiFlexItem>
+                    <EuiFlexItem >
+                      <EuiButton color="danger" fill size="s" onClick={() => deleteItemsRequest(item._id)} ><EuiIcon type="trash" size="m" /></EuiButton>
+                    </EuiFlexItem>
+                  </EuiFlexGroup>
+
+                </EuiTableRowCell>
+
+              </EuiTableRow>
+            ))}
+          </EuiTableBody>
+
+        </EuiTable>
+
+      ),
+    },
+    {
+      id: 'example5',
+      name: <div onClick={() => { setselectedTab(tabs[4])}}>Logout</div>,
+      content: (
+        <button onClick={callLogout}>Logout</button>
+      ),
+    },
+  ];
+
+  const [selectedTab, setselectedTab] = useState(tabs[0]);
+
+  
+
+  const itemsSetsInItemsList =(item) =>{
+    setItemsAdmin({
+      ...itemsAdmin,
+      selectedItem: item,
+      itemsName: item.itemsName,
+      itemsUnits: item.itemsUnits,
+      damageItemsUnits: item.damageItemsUnits,
+      remarks: item.remarks,
+    });
+ 
+
+ // Set the image URL
+    if (item.imageUrl) { // Update this line
+      setImageUrl(item.imageUrl); // Update this line
+  
+    } else {
+      setImageUrl('');
+    }
+  }
+
+  const handleEditItem = async (item) => {
+   
+     itemsSetsInItemsList(item);
+    const editTab = tabs.find((x) => x.id === 'example3');
+    setselectedTab(editTab);
+  };
+
+
+  useEffect(() => {
+    userRequestList();
+    googleRequestList();
+    itemsList() ;
+  
+  },[] );
+
+
+  return (
+    <div className="admin-pannl">
+      <EuiTabbedContent
+        selectedTab={selectedTab}
+        tabs={tabs}
+      />
+    <ToastContainer />
+    </div>
+  );
+};
+
+export default Admin;
+
+
+
+
+
+///
+import { EuiForm, EuiFormRow, EuiTabbedContent, EuiFlexGroup, EuiFlexItem, EuiIcon, EuiFieldText, EuiLink, EuiSelect, EuiFilePicker, EuiTableHeader, EuiTableRow, EuiTableRowCell, EuiTableBody, EuiTable, EuiTableHeaderCell, EuiButton, EuiSpacer, EuiTitle, EuiText } from "@elastic/eui";
+import { useNavigate } from "react-router";
+import Cookies from 'js-cookie';
+import { useState, useEffect } from "react";
+
+import { ToastContainer, toast } from 'react-toastify';
+import '../../../node_modules/react-toastify/dist/ReactToastify.css';
+
+import ImageComponent from "../base64StringToImage";
+
+
+
+
+
+
+
+
+
+const Admin = () => {
+
+  const notify = () => {
+    toast.success("Items Added Successfully", {
+      position: toast.POSITION.TOP_RIGHT,
+      autoClose: false
+    });
+  }
+
+  const navigate = useNavigate();
+  const [userRequests, setUserRequests] = useState([]);
+  const [googleRequests, setGoogleRequests] = useState([]);
+  const [items, setItems] = useState([]);
+
+  const callLogout = async () => {
+    try {
+      const res = await fetch('/logout', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        Cookies.remove('token');
+        navigate('/');
+      } else {
+        throw new Error('Logout failed');
+      }
+    } catch (err) {
+      console.log(err);
+      navigate('/');
+    }
+  };
+
+  const userRequestList = async () => {
+    try {
+      const cookieValue = Cookies.get('token');
+      const res = await fetch('/register-list', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        const data = await res.json();
+        console.log(data);
+        setUserRequests(data.pendingUsers);
+      } else {
+        throw new Error('Failed to fetch user requests');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const acceptUserRequest = async (id) => {
+    try {
+      const cookieValue = Cookies.get('token');
+      console.log(cookieValue, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+      console.log(id);
+      const res = await fetch(`/approve/${id}`, {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+
+        // Request approved successfully
+        // You can update the userRequests state or perform any other action as needed
+        // For example, remove the approved request from the list
+        const updatedRequests = userRequests.filter((request) => request._id !== id);
+        setUserRequests(updatedRequests);
+
+      } else {
+        throw new Error('Failed to approve user request');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+
+  //   const rejectUserRequest = async (id) => {
+  //     try {
+  //       const cookieValue = Cookies.get('token');
+  //       console.log(cookieValue,"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+  //       console.log(id);
+  //       const res = await fetch(`/reject/${id}`, {
+  //         method: 'PUT',
+  //         headers: {
+  //           Accept: 'application/json',
+  //           'Content-Type': 'application/json',
+  //           Authorization: 'Bearer ' + cookieValue,
+  //         },
+  //         credentials: 'include',
+  //       });
+
+  //       if (res.status === 200) {
+  //         window.location("User Request Rejected Successfully");
+  //         // Request approved successfully
+  //         // You can update the userRequests state or perform any other action as needed
+  //         // For example, remove the approved request from the list
+  //         const updatedRequests = userRequests.filter((request) => request._id !== id);
+  //         setUserRequests(updatedRequests);
+
+  //       } else {
+  //         throw new Error('Failed to approve user request');
+  //       }
+  //     } catch (error) {
+  //       console.log(error);
+  //     }
+  //   };
+
+  const rejectUserRequest = async (id) => {
+    try {
+      const cookieValue = Cookies.get('token');
+      console.log(cookieValue, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+      console.log(id);
+      const res = await fetch(`/reject/${id}`, {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        // Request rejected successfully
+        // You can update the userRequests state or perform any other action as needed
+        // For example, remove the rejected request from the list
+        const updatedRequests = userRequests.filter((request) => request._id !== id);
+        setUserRequests(updatedRequests);
+        window.alert("User Request Rejected Successfully");
+      } else {
+        throw new Error('Failed to reject user request');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  //oauth
+  const googleRequestList = async () => {
+    try {
+      const cookieValue = Cookies.get('token');
+      const res = await fetch('/oauth-register-list', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        const data = await res.json();
+        console.log(data);
+        setGoogleRequests(data.pendingUsers);
+      } else {
+        throw new Error('Failed to fetch user requests');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const googleacceptUserRequest = async (id) => {
+    try {
+      const cookieValue = Cookies.get('token');
+      console.log(cookieValue, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+      console.log(id);
+      const res = await fetch(`/google-approve/${id}`, {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+
+        // Request approved successfully
+        // You can update the userRequests state or perform any other action as needed
+        // For example, remove the approved request from the list
+        const updatedRequests = googleRequests.filter((request) => request._id !== id);
+        setGoogleRequests(updatedRequests);
+
+      } else {
+        throw new Error('Failed to approve user request');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+
+
+
+  const googlerejectUserRequest = async (id) => {
+    try {
+      const cookieValue = Cookies.get('token');
+      console.log(cookieValue, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+      console.log(id);
+      const res = await fetch(`/google-reject/${id}`, {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        // Request rejected successfully
+        // You can update the userRequests state or perform any other action as needed
+        // For example, remove the rejected request from the list
+        const updatedRequests = googleRequests.filter((request) => request._id !== id);
+        setGoogleRequests(updatedRequests);
+        window.alert("User Request Rejected Successfully");
+      } else {
+        throw new Error('Failed to reject user request');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+//admin CRUD
+const [itemsAdmin, setItemsAdmin] = useState({
+    itemsName: "",
+    itemsUnits: "",
+    damageItemsUnits: "",
+    remarks: ""
+  });
+
+  const handleInputs = (e) => {
+    const { name, value } = e.target;
+    setItemsAdmin({ ...itemsAdmin, [name]: value });
+  };
+
+//image field
+  const [imageUrl, setImageUrl] = useState("");
+ 
+//convert image into image string of base64
+  const handleImageChange = async (files) => {
+    if (files && files.length > 0) {
+      const imageFile = files[0];
+  
+      // Create a FileReader object
+      const reader = new FileReader();
+  
+      // Define a callback function to execute when the FileReader finishes reading the file
+      reader.onloadend = () => {
+        // Obtain the base64 string from the FileReader result
+        const base64String = reader.result.split(',')[1];
+        setImageUrl(base64String);
+      };
+  
+      // Read the image file as a data URL
+      reader.readAsDataURL(imageFile);
+    }
+  };
+  
+
+//reset field for items inputs
+
+const resetFields = () => {
+  setItemsAdmin({
+    itemsName: "",
+    itemsUnits: "",
+    damageItemsUnits: "",
+    remarks: ""
+  });
+  setImageUrl("");
+};
+
+  const postItems = async (e) => {
+    e.preventDefault();
+    const { itemsName, itemsUnits, damageItemsUnits, remarks } = itemsAdmin;
+
+    if (!itemsName || !itemsUnits || !damageItemsUnits || !remarks) {
+      console.log("Please fill all fields");
+      return;
+    }
+
+    try {
+      const response = await fetch("/items-add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          itemsName,
+          itemsUnits,
+          damageItemsUnits,
+          remarks,
+          imageUrl, // Include the imageUrl in the request body
+        }),
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+
+        notify();
+        resetFields();
+        console.log("Items Added Successfully");
+
+      } else {
+        const errors = data.errors;
+        if (errors) {
+          console.log("Backend Errors:", Object.values(errors).join("\n"));
+          const errorMessage = Object.values(errors).join("\n");
+          toast.error(errorMessage, {
+            position: toast.POSITION.TOP_RIGHT,
+            autoClose: 20000
+          });
+        } else {
+
+          toast.error("Invalid Items Added", {
+            position: toast.POSITION.TOP_RIGHT,
+            autoClose: 20000
+          });
+          console.log("Invalid Items Added");
+        }
+      }
+
+    } catch (error) {
+      console.log("Error:", error);
+      toast.error(error, {
+        position: toast.POSITION.TOP_RIGHT,
+        autoClose: 20000,
+      });
+    }
+  };
+//call item list from backend
+  const itemsList = async () => {
+    try {
+      const cookieValue = Cookies.get('token');
+      const res = await fetch('/items-list', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        const data = await res.json();
+        console.log(data);
+        setItems(data.itemsList);
+      } else {
+        throw new Error('Failed to fetch items');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+// delete the items from item list
+const [deleteItems ,setDeleteItems] = useState([]);
+
+const deleteItemsRequest = async (id) => {
+  try {
+    const cookieValue = Cookies.get('token');
+    const res = await fetch(`/delete-items/${id}`, {
+      method: 'PUT',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + cookieValue,
+      },
+      credentials: 'include',
+    });
+
+    if (res.status === 200) {
+      // Request rejected successfully
+      // You can update the userRequests state or perform any other action as needed
+      // For example, remove the rejected request from the list
+      const updatedRequests = deleteItems.filter((request) => request._id !== id);
+      setDeleteItems(updatedRequests);
+      itemsList()
+      window.alert("Items Deleted Successfully");
+    } else {
+      throw new Error('Failed to delete items');
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+//when i clicked in edit button data show in input field
+const[ selectedTab, setselectedTab] = useState('example1');
+
+// const handleTabClick = (tabId) => {
+//   setselectedTab(tabId);
+// };
+
+const handleEditItem = async(item) => {
+  console.log(selectedTab,"************8")
+  setselectedTab('example3');
+ 
+ 
+  setItemsAdmin({
+    ...itemsAdmin,
+    selectedItem: item,
+    itemsName: item.itemsName,
+    itemsUnits: item.itemsUnits,
+    damageItemsUnits: item.damageItemsUnits,
+    remarks: item.remarks,
+  });
+
+
+ 
+  // Set the image URL
+  if (item.imageUrl) { // Update this line
+    setImageUrl(item.imageUrl); // Update this line
+    // console.log(item.imageUrl,"6666666666666666666666666666666666666666666")
+  } else {
+    setImageUrl('');
+  }
+
+  
+
+ 
+
+};
+
+
+useEffect(() => {
+    userRequestList();
+    googleRequestList();
+ 
+  }, []);
+
+  return (
+    <div className="admin-pannl">
+      <EuiTabbedContent
+        // selectedTab={selectedTab}
+        // onTabClick={handleTabClick}
+        tabs={[
+          {
+            id: 'example1',
+            name: 'Home',
+            content: 'Welcome, Admin!.',
+          },
+          {
+            id: 'example2',
+            name: 'User Registration',
+            content: (
+              <>
+                <EuiSpacer size='l' />
+
+                <EuiText textAlign="left">
+                  <strong>
+                    Normal Signup Request:
+                  </strong>
+                </EuiText>
+
+                <EuiSpacer size='l' />
+                <EuiTable textAlign="center">
+                  <EuiTableHeader>
+                    <EuiTableHeaderCell>S.N</EuiTableHeaderCell>
+                    <EuiTableHeaderCell>Email</EuiTableHeaderCell>
+                    <EuiTableHeaderCell>Location</EuiTableHeaderCell>
+                    <EuiTableHeaderCell>Action</EuiTableHeaderCell>
+                  </EuiTableHeader>
+                  <EuiTableBody>
+                    {userRequests.map((item, index) => (
+                      <EuiTableRow key={index}>
+                        <EuiTableRowCell>{index + 1}</EuiTableRowCell>
+                        <EuiTableRowCell>{item.email}</EuiTableRowCell>
+                        <EuiTableRowCell>{item.location}</EuiTableRowCell>
+                        <EuiTableRowCell>
+                          <EuiButton color="primary" fill size="s" onClick={() => acceptUserRequest(item._id)}>Approve</EuiButton>
+                          <EuiButton color="danger" fill size='s' onClick={() => rejectUserRequest(item._id)}>Reject</EuiButton>
+                        </EuiTableRowCell>
+
+                      </EuiTableRow>
+                    ))}
+                  </EuiTableBody>
+                </EuiTable>
+                <EuiSpacer size='l' />
+
+
+                <EuiText textAlign="left">
+                  <strong>
+                    Google Sign Up Request:
+                  </strong>
+                </EuiText>
+
+                <EuiSpacer size='l' />
+                <EuiTable >
+                  <EuiTableHeader>
+                    <EuiTableHeaderCell>S.N</EuiTableHeaderCell>
+                    <EuiTableHeaderCell>Email</EuiTableHeaderCell>
+                    <EuiTableHeaderCell>User Name</EuiTableHeaderCell>
+                    <EuiTableHeaderCell>Action</EuiTableHeaderCell>
+                  </EuiTableHeader>
+                  <EuiTableBody>
+                    {googleRequests.map((item, index) => (
+                      <EuiTableRow key={index}>
+                        <EuiTableRowCell>{index + 1}</EuiTableRowCell>
+                        <EuiTableRowCell>{item.email}</EuiTableRowCell>
+                        <EuiTableRowCell>{item.username}</EuiTableRowCell>
+                        <EuiTableRowCell>
+                          <EuiButton color="primary" fill size="s" onClick={() => googleacceptUserRequest(item._id)}>Approve</EuiButton>
+                          <EuiButton color="danger" fill size='s' onClick={() => googlerejectUserRequest(item._id)}>Reject</EuiButton>
+                        </EuiTableRowCell>
+
+                      </EuiTableRow>
+                    ))}
+                  </EuiTableBody>
+                </EuiTable>
+
+              </>
+
+
+
+            ),
+          },
+          {
+            id: 'example3',
+            name: 'Manage Item',
+            content: (
+
+              <EuiForm component="form" >
+                <EuiSpacer />
+                <EuiFlexGroup>
+                  <EuiFlexItem>
+                    <EuiFormRow label="Item Description" >
+                      <EuiFieldText name="itemsName"  onChange={handleInputs} value={itemsAdmin.itemsName} />
+                    </EuiFormRow>
+                  </EuiFlexItem>
+
+                  <EuiFlexItem>
+                    <EuiFormRow label="Item Unit" >
+                      <EuiFieldText name="itemsUnits" onChange={handleInputs} value={itemsAdmin.itemsUnits} />
+                    </EuiFormRow>
+                  </EuiFlexItem>
+                </EuiFlexGroup>
+                <EuiSpacer />
+                <EuiFlexGroup>
+                  <EuiFlexItem>
+                    <EuiFormRow label="Damage Item Unit" >
+                      <EuiFieldText name="damageItemsUnits" onChange={handleInputs} value={itemsAdmin.damageItemsUnits} />
+                    </EuiFormRow>
+                  </EuiFlexItem>
+
+                  <EuiFlexItem>
+                    <EuiFormRow label="Item Image">
+                      <EuiFilePicker onChange={handleImageChange} />
+                    </EuiFormRow>
+                  </EuiFlexItem>
+                </EuiFlexGroup>
+
+                <EuiFormRow label="Remarks" >
+                  <EuiFieldText name="remarks" onChange={handleInputs} value={itemsAdmin.remarks} />
+                </EuiFormRow>
+
+                <EuiSpacer />
+                <EuiSpacer />
+
+                <EuiButton type="submit" fill onClick={postItems}>
+                  Save Item
+                </EuiButton>
+
+              </EuiForm>
+            )
+          },
+          {
+            id: 'example4',
+            name: <div onClick={() =>   itemsList() }>Items List</div>,
+            content: (
+              <EuiTable >
+                <EuiTableHeader>
+                  <EuiTableHeaderCell>S.N</EuiTableHeaderCell>
+                  <EuiTableHeaderCell>Item/Description</EuiTableHeaderCell>
+                  <EuiTableHeaderCell>Item Unit</EuiTableHeaderCell>
+                  <EuiTableHeaderCell>Damange Item Unit</EuiTableHeaderCell>
+                  <EuiTableHeaderCell>Item Image</EuiTableHeaderCell>
+                  <EuiTableHeaderCell>Remarks</EuiTableHeaderCell>
+                  <EuiTableHeaderCell>Action</EuiTableHeaderCell>
+                </EuiTableHeader>
+                <EuiTableBody>
+                  {items.map((item, index) => (
+                    <EuiTableRow key={index}>
+                      <EuiTableRowCell>{index + 1}</EuiTableRowCell>
+                      <EuiTableRowCell>{item.itemsName}</EuiTableRowCell>
+                      <EuiTableRowCell>{item.itemsUnits}</EuiTableRowCell>
+                      <EuiTableRowCell>{item.damageItemsUnits}</EuiTableRowCell>
+                      <EuiTableRowCell><ImageComponent base64String={item.imageUrl} className="conversion-image"/></EuiTableRowCell>
+                      <EuiTableRowCell>{item.remarks}</EuiTableRowCell>
+                      <EuiTableRowCell>
+                        <EuiFlexGroup>
+                          <EuiFlexItem >
+                            <EuiButton color="primary" fill size="s" onClick={() => {
+                               handleEditItem(item)
+                            }}><EuiIcon type="documentEdit" size="m"  /></EuiButton>
+                          </EuiFlexItem>
+                          <EuiFlexItem >
+                            <EuiButton color="danger" fill size="s" onClick={() => deleteItemsRequest(item._id)} ><EuiIcon type="trash" size="m" /></EuiButton>
+                          </EuiFlexItem>
+                        </EuiFlexGroup>
+
+                      </EuiTableRowCell>
+
+                    </EuiTableRow>
+                  ))}
+                </EuiTableBody>
+
+              </EuiTable>
+
+            ),
+          },
+          {
+            id: 'example5',
+            name: 'Logout',
+            content: (
+              <button onClick={callLogout}>Logout</button>
+            ),
+          },
+        ]}
+      />
+
+
+      <ToastContainer />
+    </div>
+  );
+};
+
+export default Admin;
+
+
+////
+import { EuiForm, EuiFormRow, EuiTabbedContent, EuiFlexGroup, EuiFlexItem, EuiIcon, EuiFieldText, EuiLink, EuiSelect, EuiFilePicker, EuiTableHeader, EuiTableRow, EuiTableRowCell, EuiTableBody, EuiTable, EuiTableHeaderCell, EuiButton, EuiSpacer, EuiTitle, EuiText } from "@elastic/eui";
+import { useNavigate } from "react-router";
+import Cookies from 'js-cookie';
+import { useState, useEffect } from "react";
+
+import { ToastContainer, toast } from 'react-toastify';
+import '../../../node_modules/react-toastify/dist/ReactToastify.css';
+
+import ImageComponent from "../base64StringToImage";
+
+
+
+
+
+
+
+
+
+const Admin = () => {
+
+  const notify = () => {
+    toast.success("Items Added Successfully", {
+      position: toast.POSITION.TOP_RIGHT,
+      autoClose: false
+    });
+  }
+
+  const navigate = useNavigate();
+  const [userRequests, setUserRequests] = useState([]);
+  const [googleRequests, setGoogleRequests] = useState([]);
+  const [items, setItems] = useState([]);
+
+  const callLogout = async () => {
+    try {
+      const res = await fetch('/logout', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        Cookies.remove('token');
+        navigate('/');
+      } else {
+        throw new Error('Logout failed');
+      }
+    } catch (err) {
+      console.log(err);
+      navigate('/');
+    }
+  };
+
+  const userRequestList = async () => {
+    try {
+      const cookieValue = Cookies.get('token');
+      const res = await fetch('/register-list', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        const data = await res.json();
+        console.log(data);
+        setUserRequests(data.pendingUsers);
+      } else {
+        throw new Error('Failed to fetch user requests');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const acceptUserRequest = async (id) => {
+    try {
+      const cookieValue = Cookies.get('token');
+      console.log(cookieValue, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+      console.log(id);
+      const res = await fetch(`/approve/${id}`, {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+
+        // Request approved successfully
+        // You can update the userRequests state or perform any other action as needed
+        // For example, remove the approved request from the list
+        const updatedRequests = userRequests.filter((request) => request._id !== id);
+        setUserRequests(updatedRequests);
+
+      } else {
+        throw new Error('Failed to approve user request');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+
+  //   const rejectUserRequest = async (id) => {
+  //     try {
+  //       const cookieValue = Cookies.get('token');
+  //       console.log(cookieValue,"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+  //       console.log(id);
+  //       const res = await fetch(`/reject/${id}`, {
+  //         method: 'PUT',
+  //         headers: {
+  //           Accept: 'application/json',
+  //           'Content-Type': 'application/json',
+  //           Authorization: 'Bearer ' + cookieValue,
+  //         },
+  //         credentials: 'include',
+  //       });
+
+  //       if (res.status === 200) {
+  //         window.location("User Request Rejected Successfully");
+  //         // Request approved successfully
+  //         // You can update the userRequests state or perform any other action as needed
+  //         // For example, remove the approved request from the list
+  //         const updatedRequests = userRequests.filter((request) => request._id !== id);
+  //         setUserRequests(updatedRequests);
+
+  //       } else {
+  //         throw new Error('Failed to approve user request');
+  //       }
+  //     } catch (error) {
+  //       console.log(error);
+  //     }
+  //   };
+
+  const rejectUserRequest = async (id) => {
+    try {
+      const cookieValue = Cookies.get('token');
+      console.log(cookieValue, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+      console.log(id);
+      const res = await fetch(`/reject/${id}`, {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        // Request rejected successfully
+        // You can update the userRequests state or perform any other action as needed
+        // For example, remove the rejected request from the list
+        const updatedRequests = userRequests.filter((request) => request._id !== id);
+        setUserRequests(updatedRequests);
+        window.alert("User Request Rejected Successfully");
+      } else {
+        throw new Error('Failed to reject user request');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  //oauth
+  const googleRequestList = async () => {
+    try {
+      const cookieValue = Cookies.get('token');
+      const res = await fetch('/oauth-register-list', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        const data = await res.json();
+        console.log(data);
+        setGoogleRequests(data.pendingUsers);
+      } else {
+        throw new Error('Failed to fetch user requests');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const googleacceptUserRequest = async (id) => {
+    try {
+      const cookieValue = Cookies.get('token');
+      console.log(cookieValue, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+      console.log(id);
+      const res = await fetch(`/google-approve/${id}`, {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+
+        // Request approved successfully
+        // You can update the userRequests state or perform any other action as needed
+        // For example, remove the approved request from the list
+        const updatedRequests = googleRequests.filter((request) => request._id !== id);
+        setGoogleRequests(updatedRequests);
+
+      } else {
+        throw new Error('Failed to approve user request');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+
+
+
+  const googlerejectUserRequest = async (id) => {
+    try {
+      const cookieValue = Cookies.get('token');
+      console.log(cookieValue, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+      console.log(id);
+      const res = await fetch(`/google-reject/${id}`, {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        // Request rejected successfully
+        // You can update the userRequests state or perform any other action as needed
+        // For example, remove the rejected request from the list
+        const updatedRequests = googleRequests.filter((request) => request._id !== id);
+        setGoogleRequests(updatedRequests);
+        window.alert("User Request Rejected Successfully");
+      } else {
+        throw new Error('Failed to reject user request');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  //admin CRUD
+  const [itemsAdmin, setItemsAdmin] = useState({
+    itemsName: '', // Add default value here
+    itemsUnits: '', // Add default value here
+    damageItemsUnits: '', // Add default value here
+    remarks: '', // Add default value here
+  });
+
+  const handleInputs = (e) => {
+    const { name, value } = e.target;
+    setItemsAdmin({ ...itemsAdmin, [name]: value });
+    
+  };
+
+  //image field
+  const [imageUrl, setImageUrl] = useState("");
+  const [editingItem, setEditingItem] = useState(false);
+
+  //convert image into image string of base64
+  const handleImageChange = async (files) => {
+
+  };
+
+
+  //reset field for items inputs
+
+  const resetFields = () => {
+    setItemsAdmin({
+      itemsName: "",
+      itemsUnits: "",
+      damageItemsUnits: "",
+      remarks: ""
+    });
+    setImageUrl("");
+  };
+
+  const postItems = async (e) => {
+    e.preventDefault();
+    const { itemsName, itemsUnits, damageItemsUnits, remarks } = itemsAdmin;
+
+    if (!itemsName || !itemsUnits || !damageItemsUnits || !remarks) {
+      console.log("Please fill all fields");
+      return;
+    }
+
+    try {
+      const response = await fetch("/items-add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          itemsName,
+          itemsUnits,
+          damageItemsUnits,
+          remarks,
+          imageUrl, // Include the imageUrl in the request body
+        }),
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+
+        notify();
+        resetFields();
+        console.log("Items Added Successfully");
+
+      } else {
+        const errors = data.errors;
+        if (errors) {
+          console.log("Backend Errors:", Object.values(errors).join("\n"));
+          const errorMessage = Object.values(errors).join("\n");
+          toast.error(errorMessage, {
+            position: toast.POSITION.TOP_RIGHT,
+            autoClose: 20000
+          });
+        } else {
+
+          toast.error("Invalid Items Added", {
+            position: toast.POSITION.TOP_RIGHT,
+            autoClose: 20000
+          });
+          console.log("Invalid Items Added");
+        }
+      }
+
+    } catch (error) {
+      console.log("Error:", error);
+      toast.error(error, {
+        position: toast.POSITION.TOP_RIGHT,
+        autoClose: 20000,
+      });
+    }
+  };
+  //call item list from backend
+  const itemsList = async () => {
+    try {
+      const cookieValue = Cookies.get('token');
+      const res = await fetch('/items-list', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        const data = await res.json();
+        console.log(data);
+        setItems(data.itemsList);
+      } else {
+        throw new Error('Failed to fetch items');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  // delete the items from item list
+  const [deleteItems, setDeleteItems] = useState([]);
+
+  const deleteItemsRequest = async (id) => {
+    try {
+      const cookieValue = Cookies.get('token');
+      const res = await fetch(`/delete-items/${id}`, {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookieValue,
+        },
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        // Request rejected successfully
+        // You can update the userRequests state or perform any other action as needed
+        // For example, remove the rejected request from the list
+        const updatedRequests = deleteItems.filter((request) => request._id !== id);
+        setDeleteItems(updatedRequests);
+        itemsList()
+        window.alert("Items Deleted Successfully");
+      } else {
+        throw new Error('Failed to delete items');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+ 
+  //when i clicked in edit button data show in input field
+ 
+
+  const tabs = [
+    {
+      id: 'example1',
+      name:  <div onClick={() => { setselectedTab(tabs[0])}}>Home</div>,
+      content: 'Welcome, Admin!.',
+    },
+    {
+      id: 'example2',
+      name: <div onClick={() => { setselectedTab(tabs[1])}}>User Registration</div>,
+      content: (
+        <>
+          <EuiSpacer size='l' />
+
+          <EuiText textAlign="left">
+            <strong>
+              Normal Signup Request:
+            </strong>
+          </EuiText>
+
+          <EuiSpacer size='l' />
+          <EuiTable >
+            <EuiTableHeader>
+              <EuiTableHeaderCell>S.N</EuiTableHeaderCell>
+              <EuiTableHeaderCell>Email</EuiTableHeaderCell>
+              <EuiTableHeaderCell>Location</EuiTableHeaderCell>
+              <EuiTableHeaderCell>Action</EuiTableHeaderCell>
+            </EuiTableHeader>
+            <EuiTableBody>
+              {userRequests.map((item, index) => (
+                <EuiTableRow key={index}>
+                  <EuiTableRowCell>{index + 1}</EuiTableRowCell>
+                  <EuiTableRowCell>{item.email}</EuiTableRowCell>
+                  <EuiTableRowCell>{item.location}</EuiTableRowCell>
+                  <EuiTableRowCell>
+                    <EuiButton color="primary" fill size="s" onClick={() => acceptUserRequest(item._id)}>Approve</EuiButton>
+                    <EuiButton color="danger" fill size='s' onClick={() => rejectUserRequest(item._id)}>Reject</EuiButton>
+                  </EuiTableRowCell>
+
+                </EuiTableRow>
+              ))}
+            </EuiTableBody>
+          </EuiTable>
+          <EuiSpacer size='l' />
+
+
+          <EuiText textAlign="left">
+            <strong>
+              Google Sign Up Request:
+            </strong>
+          </EuiText>
+
+          <EuiSpacer size='l' />
+          <EuiTable >
+            <EuiTableHeader>
+              <EuiTableHeaderCell>S.N</EuiTableHeaderCell>
+              <EuiTableHeaderCell>Email</EuiTableHeaderCell>
+              <EuiTableHeaderCell>User Name</EuiTableHeaderCell>
+              <EuiTableHeaderCell>Action</EuiTableHeaderCell>
+            </EuiTableHeader>
+            <EuiTableBody>
+              {googleRequests.map((item, index) => (
+                <EuiTableRow key={index}>
+                  <EuiTableRowCell>{index + 1}</EuiTableRowCell>
+                  <EuiTableRowCell>{item.email}</EuiTableRowCell>
+                  <EuiTableRowCell>{item.username}</EuiTableRowCell>
+                  <EuiTableRowCell>
+                    <EuiButton color="primary" fill size="s" onClick={() => googleacceptUserRequest(item._id)}>Approve</EuiButton>
+                    <EuiButton color="danger" fill size='s' onClick={() => googlerejectUserRequest(item._id)}>Reject</EuiButton>
+                  </EuiTableRowCell>
+
+                </EuiTableRow>
+              ))}
+            </EuiTableBody>
+          </EuiTable>
+
+        </>
+
+
+
+      ),
+    },
+    {
+      id: 'example3',
+      name: <div onClick={() => { setselectedTab(tabs[2]);}}>Manage Items</div>,
+      content: (
+
+        <EuiForm component="form" >
+          <EuiSpacer />
+          <EuiFlexGroup>
+            <EuiFlexItem>
+              <EuiFormRow label="Item Description" >
+                <EuiFieldText name="itemsName"  onChange={handleInputs} value={itemsAdmin.itemsName}  />
+              </EuiFormRow>
+            </EuiFlexItem>
+
+            <EuiFlexItem>
+              <EuiFormRow label="Item Unit" >
+                <EuiFieldText name="itemsUnits" onChange={handleInputs} value={itemsAdmin.itemsUnits} />
+              </EuiFormRow>
+            </EuiFlexItem>
+          </EuiFlexGroup>
+          <EuiSpacer />
+          <EuiFlexGroup>
+            <EuiFlexItem>
+              <EuiFormRow label="Damage Item Unit" >
+                <EuiFieldText name="damageItemsUnits" onChange={handleInputs} value={itemsAdmin.damageItemsUnits} />
+              </EuiFormRow>
+            </EuiFlexItem>
+
+            <EuiFlexItem>
+              <EuiFormRow label="Item Image">
+                <EuiFilePicker onChange={handleImageChange} />
+              </EuiFormRow>
+            </EuiFlexItem>
+          </EuiFlexGroup>
+
+          <EuiFormRow label="Remarks" >
+            <EuiFieldText name="remarks" onChange={handleInputs} value={itemsAdmin.remarks} />
+          </EuiFormRow>
+
+          <EuiSpacer />
+          <EuiSpacer />
+
+  
+        <EuiButton type="submit" fill onClick={postItems}>
+          {editingItem ? 'Edit Items' : 'Save Item'}
+        </EuiButton>
+      
+
+        </EuiForm>
+      )
+    },
+    {
+      id: 'example4',
+      name: <div onClick={() => { 
+        setselectedTab(tabs[3])
+        itemsList() 
+      }}>Items List</div>,
+      content: (
+        <EuiTable >
+          <EuiTableHeader>
+            <EuiTableHeaderCell>S.N</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Item/Description</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Item Unit</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Damange Item Unit</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Item Image</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Remarks</EuiTableHeaderCell>
+            <EuiTableHeaderCell>Action</EuiTableHeaderCell>
+          </EuiTableHeader>
+          <EuiTableBody>
+            {items.map((item, index) => (
+              <EuiTableRow key={index}>
+                <EuiTableRowCell>{index + 1}</EuiTableRowCell>
+                <EuiTableRowCell>{item.itemsName}</EuiTableRowCell>
+                <EuiTableRowCell>{item.itemsUnits}</EuiTableRowCell>
+                <EuiTableRowCell>{item.damageItemsUnits}</EuiTableRowCell>
+                <EuiTableRowCell><ImageComponent base64String={item.imageUrl} className="conversion-image" /></EuiTableRowCell>
+                <EuiTableRowCell>{item.remarks}</EuiTableRowCell>
+                <EuiTableRowCell>
+                  <EuiFlexGroup>
+                    <EuiFlexItem >
+                      <EuiButton color="primary" fill size="s" onClick={() => {
+                        handleEditItem(item)
+                      }}><EuiIcon type="documentEdit" size="m" /></EuiButton>
+                    </EuiFlexItem>
+                    <EuiFlexItem >
+                      <EuiButton color="danger" fill size="s" onClick={() => deleteItemsRequest(item._id)} ><EuiIcon type="trash" size="m" /></EuiButton>
+                    </EuiFlexItem>
+                  </EuiFlexGroup>
+
+                </EuiTableRowCell>
+
+              </EuiTableRow>
+            ))}
+          </EuiTableBody>
+
+        </EuiTable>
+
+      ),
+    },
+    {
+      id: 'example5',
+      name: <div onClick={() => { setselectedTab(tabs[4])}}>Logout</div>,
+      content: (
+        <button onClick={callLogout}>Logout</button>
+      ),
+    },
+  ];
+
+  const [selectedTab, setselectedTab] = useState(tabs[0]);
+
+  
+  const handleEditItem = async (item) => {
+    setItemsAdmin({
+      ...itemsAdmin,
+      itemsName: item.itemsName,
+      itemsUnits: item.itemsUnits,
+      damageItemsUnits: item.damageItemsUnits,
+      remarks: item.remarks,
+    });
+
+     // Set the image URL
+     if (item.imageUrl) { // Update this line
+      setImageUrl(item.imageUrl); // Update this line
+  
+    } else {
+      setImageUrl('');
+    }
+
+    const editTab = tabs.find((x) => x.id === 'example3');
+    setselectedTab(editTab);
+    setEditingItem(true);
+
+   
+  };
+ 
+
+
+
+  useEffect(() => {
+    userRequestList();
+    googleRequestList();
+    itemsList() ;
+ 
+  
+  },[] );
+
+
+
+  return (
+    <div className="admin-pannl">
+      <EuiTabbedContent
+        selectedTab={selectedTab}
+        tabs={tabs}
+      />
+    <ToastContainer />
+    </div>
+  );
+};
+
+export default Admin;
+

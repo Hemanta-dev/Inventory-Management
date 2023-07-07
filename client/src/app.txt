@@ -1,0 +1,176 @@
+import './App.scss';
+import Home from "../src/Components/home";
+import { Login } from './Components/login';
+import Signup from './Components/signup';
+import '@elastic/eui/dist/eui_theme_light.css';
+import { EuiProvider } from '@elastic/eui';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+
+
+function App() {
+  // const [a, setA] = useState()
+  // useEffect(() => {
+  //   setA(document.cookie);
+  //   console.log(a, "---------");
+  // }, [a]);
+  // const jwttoken = document.cookie;
+  // console.log(jwttoken, "333333333333333333333333333333");
+
+  return (
+    <EuiProvider className="body-content" colorMode="light">
+      <Router>
+        <Routes>
+          <Route path='/' element={<Login />} />
+          <Route path='/signup' element={<Signup />} /> 
+          <Route path='/home' element={<Home />}/>
+
+          {/* {a ? (
+            <Route path='/home' element={<Home />} />
+          ) : (<>
+            <Route path='/' element={<Login />} />
+            <Route path='/*' element={<Login />}  />
+          </>
+
+          )} */}
+        </Routes>
+      </Router>
+
+    </EuiProvider>
+  );
+}
+
+export default App;
+
+// const App = () => {
+//   const navigate = useNavigate();
+//   const jwttoken = document.cookie;/* Your logic to determine if the token is present */;
+
+//   if (!jwttoken) {
+//     navigate('/'); // Redirect to '/login' if jwttoken is not present
+//   }
+
+//   return (
+//     <Router>
+//       <Routes>
+//         <Route path='/' element={<Login />} />
+//         <Route path='/login' element={<Login />} />
+//         <Route path='/signup' element={<Signup />} />
+//         <Route path='/home' element={<Home />} />
+//       </Routes>
+//     </Router>
+//   );
+// };
+
+// export default App;
+
+
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import './App.scss';
+import Home from './Components/home';
+import { Login } from './Components/login';
+import Signup from './Components/signup';
+import '@elastic/eui/dist/eui_theme_light.css';
+import { EuiProvider } from '@elastic/eui';
+
+function App() {
+  const jwttoken = document.cookie;
+  console.log(jwttoken, '333333333333333333333333333333');
+
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    // Check if the token exists and set the isLoggedIn state accordingly
+    setIsLoggedIn(Boolean(jwttoken));
+  }, [jwttoken]);
+
+  return (
+    <EuiProvider className="body-content" colorMode="light">
+      <Router>
+        <Routes>
+          <Route
+            path="/"
+            element={isLoggedIn ? <Navigate to="/home" /> : <Login />}
+          />
+          <Route path="/signup" element={<Signup />} />
+          <Route
+            path="/home"
+            element={isLoggedIn ? <Home /> : <Navigate to="/" />}
+          />
+        </Routes>
+      </Router>
+    </EuiProvider>
+  );
+}
+
+export default App;
+
+
+
+//sujan dai
+
+import './App.scss';
+import Home from "../src/Components/home";
+import { Login } from './Components/login';
+import Signup from './Components/signup';
+import '@elastic/eui/dist/eui_theme_light.css';
+import { EuiProvider } from '@elastic/eui';
+import { BrowserRouter as Router, RouterProvider, Routes, Route, redirect } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { createBrowserRouter } from 'react-router-dom';
+
+
+function App() {
+  const jwttoken = document.cookie;
+  // console.log(jwttoken, "333333333333333333333333333333");
+
+  // const routes = createBrowserRouter([
+  //   {
+  //     element: <Login />,
+  //     path: "/",
+  //   },
+  //   {
+  //     element: <Signup />,
+  //     path: "/signup",
+  //   },
+  //   {
+  //     element: <Home />,
+  //     path: "/home",
+  //     loader: async () => {
+  //       if(
+  //         !jwttoken
+  //       ) {
+  //         redirect('/');
+  //         return null;
+  //       }
+  //       return;
+  //     },
+  //   },
+  // ])
+
+
+  return (
+    <EuiProvider className="body-content" colorMode="light">
+      {/* <RouterProvider router={routes} /> */}
+      <Router>
+        <Routes>
+          <Route path='/' element={<Login />} />
+          <Route path='/signup' element={<Signup />} />
+          <Route path='/home' element={<Home />} loader={() => {
+            console.log(jwttoken);
+            if (jwttoken) {
+              console.log("here")
+              redirect("/")
+            }
+            return;
+          }} />
+        </Routes>
+      </Router>
+    </EuiProvider>
+  );
+}
+
+export default App;
+
+
