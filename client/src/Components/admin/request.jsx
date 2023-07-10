@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { EuiForm, EuiFormRow, EuiTabbedContent, EuiFlexGroup, EuiFlexItem, EuiIcon, EuiFieldText, EuiLink, EuiSelect, EuiFilePicker, EuiTableHeader, EuiTableRow, EuiTableRowCell, EuiTableBody, EuiTable, EuiTableHeaderCell, EuiButton, EuiSpacer, EuiTitle, EuiText } from "@elastic/eui";
 
 
-const Request = ({ onClickCallback }) => {
+const Request = () => {
   const [requestItem, setRequestItems] = useState([]);
   const RequestUserItemList = async () => {
     try {
@@ -40,9 +40,18 @@ const Request = ({ onClickCallback }) => {
         });
 
       if (res.status === 200) {
-        const updatedRequests = requestItem.filter((request) => request._id !== id);
-        setRequestItems(updatedRequests);
+        // const updatedRequests = requestItem.filter((request) => request._id !== id);
+        // setRequestItems(updatedRequests);
         window.alert("Approved user request for itemSuccessfully");
+        const updatedRequests = requestItem.map((request) => {
+          if (request._id === id) {
+            // Update the status of the specific item
+            setRequestItems(updatedRequests);
+            RequestUserItemList();
+            return { ...request };
+          }
+          return request;
+        });
       
 
       } else {
@@ -86,10 +95,9 @@ const Request = ({ onClickCallback }) => {
 
   }
   useEffect(() => {
-    if (onClickCallback) {
-      RequestUserItemList();
-    }
-  }, [onClickCallback]);
+   RequestUserItemList();
+    
+  }, []);
 
   return (
     <>
