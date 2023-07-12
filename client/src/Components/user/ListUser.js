@@ -17,6 +17,7 @@ const ListUser = () => {
 
     const [showModal, setShowModal] = useState(false);
     const closeModal =() =>{
+        ListView();
         return setShowModal(false);
     }
    
@@ -39,6 +40,7 @@ const ListUser = () => {
                 setShowDataList(data.item.itemsName)
                 console.log(data.item,"3333333333333333333333333333333333333333333333")
                 setShowModal(true);
+         
                 
               } else {
                 throw new Error('Item Request Failed');
@@ -109,7 +111,7 @@ const ListUser = () => {
                 </EuiFlexGroup>
                 <EuiSpacer size="m" />
             </EuiPageTemplate.Section>
-            {showModal && <MyModal closeModal={closeModal} handleRequest={handleRequest}  showModalData={showDataList} /> }
+            {showModal && <MyModal closeModal={closeModal} handleRequest={handleRequest} ListView={ListView} showModalData={showDataList} /> }
         </>
     )
 }

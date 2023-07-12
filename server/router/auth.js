@@ -563,22 +563,22 @@ router.post("/items-add", async (req, res) => {
 //item list
 
 // Request User list after signup through google for approval
-router.get('/items-list', Authenticateadmin, async (req, res) => {
-  try {
+// router.get('/items-list', Authenticateadmin, async (req, res) => {
+//   try {
 
-    if(req.role == 'superuser' || req.role == 'user'){
-      const itemsList = await Items.find();
-      console.log(itemsList,"--------------------------------");
-      res.status(200).json({ itemsList });
+//     if(req.role == 'superuser' || req.role == 'user'){
+//       const itemsList = await Items.find();
+//       console.log(itemsList,"--------------------------------");
+//       res.status(200).json({ itemsList });
 
-    }
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "Failed to show items list" });
-  }
+//     }
+//   } catch (err) {
+//     console.log(err);
+//     res.status(500).json({ error: "Failed to show items list" });
+//   }
 
   
-});
+// });
 
 //delete items api delete-items
 router.delete('/delete-items/:id', Authenticateadmin, async (req, res) => {
@@ -673,11 +673,11 @@ router.post("/items-request", async (req, res) => {
     }
 
     try {
-      const itemsExists = await ItemsRequest.findOne({ itemsName: itemsName });
+      // const itemsExists = await ItemsRequest.findOne({ itemsName: itemsName });
 
-      if (itemsExists) {
-        return res.status(422).json({ error: "Items already exists" });
-      }
+      // if (itemsExists) {
+      //   return res.status(422).json({ error: "Items already exists" });
+      // }
 
       const itemsRequest = new ItemsRequest({
         itemsName: itemsName,
@@ -706,7 +706,7 @@ router.post("/items-request", async (req, res) => {
 
     }catch(error){
       console.log(error);
-      reset.status(500).json({message:"failed to load list"});
+      res.status(500).json({message:"failed to load list"});
 
     }
     })
@@ -754,6 +754,69 @@ router.put('/items-user-request-reject/:id', async (req, res) => {
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: "Failed to approve User request for item" });
+  }
+});
+
+
+///////
+// const itemsList = [
+//   {
+//     "_id": "64a3e2be6508505fc0dc18a5",
+//     "itemsName": "laptop",
+//     "itemsUnits": 20,
+//   }
+// ];
+
+// const itemUserRequest = [
+//   {
+//     "_id": "64a79d12cc6d160fa3fb9699",
+//     "itemsName": "laptop",
+//     "itemsUnits": 5,
+//     "message": "i want it",
+//     "email": "sete999@gmail.com",
+//     "isApproved": true,
+//   },
+// ];
+
+// // Find the item in itemsList based on the request
+// const requestedItem = itemUserRequest.find((request) => request.itemsName === "laptop");
+
+// if (requestedItem && requestedItem.isApproved) {
+//   // Find the item in itemsList based on _id and itemsName
+//   const selectedItem = itemsList.find((item) => item._id === requestedItem._id && item.itemsName === requestedItem.itemsName);
+
+//   if (selectedItem) {
+//     // Deduct the requested units from itemsUnits
+//     selectedItem.itemsUnits -= requestedItem.itemsUnits;
+
+//     console.log("Updated itemsList:", itemsList);
+//   } else {
+//     console.log("Item not found in itemsList.");
+//   }
+// } else {
+//   console.log("Item request not approved.");
+// }
+// Request User list after signup through google for approval
+router.get('/items-list', Authenticateadmin, async (req, res) => {
+  try {
+    if (req.role == 'superuser' || req.role == 'user') {
+      const itemsList = await Items.find();
+      const itemUserRequest = await ItemsRequest.find();
+      itemsList.forEach((item,index)=>{
+          const itemsMatching = itemUserRequest.find((itemsRequest)=> itemsRequest.itemsName == item.itemsName );
+            if(itemsMatching && itemsMatching.isApproved){
+              const difference = item.itemsUnits - itemsMatching.itemsUnits;
+              item.itemsUnits = difference;
+            }else {
+              item.itemsUnits;
+            }
+          })
+      res.status(200).json({itemsList});
+   
+    } 
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Failed to show items list" });
   }
 });
 

@@ -374,6 +374,7 @@ const handleEditItem = async (item) => {
 const [isRequestClicked, setIsRequestClicked] = useState(false);
 
 const handleRequestClick = () => {
+  itemsList();
   setIsRequestClicked(true);
   setselectedTab(tabs[4]) ;
 };
@@ -524,7 +525,7 @@ useEffect(()=>{
       id: 'example5',
       name: <div onClick={handleRequestClick}>User Items Request</div>,
       content: (
-        <Request onClickCallback={isRequestClicked}/>
+        <Request />
       ),
     },
     {

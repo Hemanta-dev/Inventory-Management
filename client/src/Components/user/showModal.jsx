@@ -9,8 +9,8 @@ import Cookies from 'js-cookie';
 import jwt_decode from 'jwt-decode';
 
 
-const MyModal = ({ closeModal, handleRequest, showModalData }) => {
- 
+const MyModal = ({ closeModal, handleRequest,ListView,showModalData }) => {
+
     const [itemsUser, setItemsUser] = useState({
         itemsName: "",
         itemsUnits: "",

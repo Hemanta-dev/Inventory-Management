@@ -4,6 +4,7 @@ import { EuiForm, EuiFormRow, EuiTabbedContent, EuiFlexGroup, EuiFlexItem, EuiIc
 
 const Request = () => {
   const [requestItem, setRequestItems] = useState([]);
+  const [refresh, setRefresh] = useState(false);
   const RequestUserItemList = async () => {
     try {
       const res = await fetch('/items-user-request', {
@@ -27,7 +28,6 @@ const Request = () => {
     }
   }
 
- 
 
   const acceptHandleButton = async (id) => {
     try {
@@ -42,18 +42,18 @@ const Request = () => {
       if (res.status === 200) {
         // const updatedRequests = requestItem.filter((request) => request._id !== id);
         // setRequestItems(updatedRequests);
-        window.alert("Approved user request for itemSuccessfully");
+   
+       
         const updatedRequests = requestItem.map((request) => {
           if (request._id === id) {
-            // Update the status of the specific item
-            setRequestItems(updatedRequests);
-            RequestUserItemList();
-            return { ...request };
+              // Update the status of the specific item
+            return { ...request,isApproved:true };
           }
           return request;
-        });
+          });
       
-
+        setRequestItems(updatedRequests);
+        window.alert("Approved user request for itemSuccessfully");
       } else {
         throw new Error('Failed to approve user request for item');
       }
@@ -85,6 +85,7 @@ const Request = () => {
       if (res.status === 200) {
         const deletedRequests = requestItem.filter((request) => request._id !== id);
         setRequestItems(deletedRequests);
+
         window.alert("User Request for Items Rejected Successfully");
       } else {
         throw new Error('Failed to reject User Request for Items');
@@ -121,7 +122,7 @@ const Request = () => {
               <EuiTableRowCell>
                 <EuiFlexGroup>
                     {item.isApproved ? 
-                        <EuiFlexItem ><EuiButton color="success" fill size="s">Accepted</EuiButton></EuiFlexItem >
+                        <EuiFlexItem ><EuiButton color="success" fill size="s" >Accepted</EuiButton></EuiFlexItem >
                      : 
                         <EuiFlexItem ><EuiButton color="primary" fill size="s" onClick={() => acceptHandleButton(item._id)}>Pending</EuiButton></EuiFlexItem >
                     }
